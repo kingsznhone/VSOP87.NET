@@ -7,7 +7,7 @@
 
 完成了所有6种模式的支持
 
-Read original data and calculate
+Read original data from official ftp server and calculate
 
 all 6 version supported
 
