@@ -7,11 +7,13 @@
 
 完成了所有6种模式的支持
 
+如果喜欢的话可以给我一颗小星星吗？
+
 Read original data from official ftp server and calculate
 
 all 6 version supported
 
-
+Star me if you like it.
 
  VSOP87 algorithm remastered in C#
 
