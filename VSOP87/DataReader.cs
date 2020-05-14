@@ -9,6 +9,18 @@ namespace VSOP87
 {
     public enum Body
     {
+        /*
+         * 0: Sun
+         * 1: Mercury
+         * 2: Venus
+         * 3: Earth
+         * 4: Mars
+         * 5: Jupiter
+         * 6: Saturn
+         * 7: Uranus
+         * 8: Neptune
+         * 9: Earth-Moon barycenter
+         */
         SUN = 0,
         MERCURY = 1,
         VENUS = 2,
@@ -20,9 +32,33 @@ namespace VSOP87
         NEPTUNE = 8,
         EMB = 9
     }
-
     public enum Version
     {
+
+        /* 0: VSOP87 (initial solution).
+        *    elliptic coordinates
+        *    dynamical equinox and ecliptic J2000.
+        *  1: VSOP87A.
+        *    rectangular coordinates
+        *    heliocentric positions and velocities
+        *    dynamical equinox and ecliptic J2000.
+        *  2: VSOP87A.
+        *    spherical coordinates
+        *    heliocentric positions and velocities
+        *    dynamical equinox and ecliptic J2000.
+        *  3: VSOP87C.
+        *    rectangular coordinates
+        *    heliocentric positions and velocities
+        *    dynamical equinox and ecliptic of the date.
+        *  4: VSOP87D.
+        *    spherical coordinates
+        *    heliocentric positions and velocities
+        *    dynamical equinox and ecliptic of the date.
+        *  5: VSOP87E.
+        *    rectangular coordinates
+        *    barycentric positions and velocities
+        *    dynamical equinox and ecliptic J2000.*/
+
         VSOP87 = 0,
         VSOP87A = 1,
         VSOP87B = 2,
@@ -31,10 +67,10 @@ namespace VSOP87
         VSOP87E = 5,
     }
 
-
     public struct PlanetData
     {
         public Variable[] variables;
+        public Version iver;
     }
     public struct Variable
     {
@@ -54,7 +90,6 @@ namespace VSOP87
         public int it; //degree alpha of time variable T 
         public int nt; //number of terms of series
     }
-
     public struct Term
     {
         public int rank; //rank of the term in a serie
@@ -66,58 +101,64 @@ namespace VSOP87
 
     public class DataReader
     {
-        static string[] EXT = {@".sun",@".mer",@".ven",@".ear",@".mar",@".jup",@".sat",@".ura",@".nep",@".emb"};
+        static public string[] FULLEXT = { @".sun", @".mer", @".ven", @".ear", @".mar", @".jup", @".sat", @".ura", @".nep", @".emb" };
         string Path;
-        public PlanetData planet;
-        public DataReader(string Data)
+        public PlanetData planetdata;
+        public DataReader(string DataDir)
         {
-            Path = @"D:\VSOP87DATA\VSOP87D.ear";
+            if (DataDir.EndsWith(@"\"))
+                Path = DataDir;
+            else
+            {
+                Path = DataDir;
+                Path += @"\";
+            }
 
-            planet.variables = new Variable[6];
+            //create an empty dataset
+            planetdata.variables = new Variable[6];
             for (int ic = 0; ic < 6; ic++)
             {
-                planet.variables[ic].PowerTables = new Power[6];
+                planetdata.variables[ic].PowerTables = new Power[6];
             }
-            ReadPlanet(Path);
-            Console.WriteLine("Load OK");
         }
 
 
-
-        private string JointFilename(int iver,int ibody)
+        private string JointFilename(Version iver, Body ibody)
         {
             string buffer = Enum.GetName(typeof(Version), iver);
-            buffer += EXT[ibody];
+            buffer += FULLEXT[(int)ibody];
             return buffer;
         }
 
-        public void ReadPlanet(string path)
+
+        public PlanetData ReadPlanet(Version iver, Body ibody)
         {
-            StreamReader sr;
+            planetdata.iver = iver;
+            Path += JointFilename(iver, ibody);
+            if (!File.Exists(Path)) throw new Exception("Check Version and Body");
+
             Header H = new Header();
             string line;
+            using (StreamReader sr = new StreamReader(Path))
             {
-                //  C:\VSOPDATA\VSOP2013p1.dat
-                sr = new StreamReader(path);
                 while ((line = sr.ReadLine()) != null)
                 {
                     ReadHeader(line, ref H);
-                    Term[] buffer = new Term[H.nt];
+                    planetdata.variables[H.ic].PowerTables[H.it].Terms = new Term[H.nt];
                     for (int i = 0; i < H.nt; i++)
                     {
                         line = sr.ReadLine();
-                        ReadTerm(line, ref buffer[i]);
+                        ReadTerm(line, ref planetdata.variables[H.ic].PowerTables[H.it].Terms[i]);
                     }
-
-                    planet.variables[H.ic].PowerTables[H.it].Terms = buffer;
                 }
             }
-            sr.Close();
+            Console.WriteLine(JointFilename(iver, Body.EARTH)+ " Load OK");
+            Console.WriteLine();
+            return planetdata;
         }
 
         private void ReadHeader(string line, ref Header H)
         {
-
             int lineptr = 17;
             H.iv = Convert.ToInt32(line.Substring(lineptr, 1).Trim()) - 1;
             lineptr += 5;
@@ -134,7 +175,7 @@ namespace VSOP87
             H.nt = Convert.ToInt32(line.Substring(lineptr, 7).Trim());
         }
 
-        private Term ReadTerm(string line, ref Term T)
+        private void ReadTerm(string line, ref Term T)
         {
             int lineptr;
 
@@ -157,8 +198,6 @@ namespace VSOP87
 
             abc = Convert.ToDouble(line.Substring(lineptr, 20).Trim());
             T.C = abc;
-
-            return T;
         }
 
     }

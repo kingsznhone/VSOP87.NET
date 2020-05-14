@@ -10,6 +10,7 @@ namespace VSOP87
     {
         PlanetData planetDatas;
         private double phi;
+        private double[] t;
 
         public VSOPCalculator(PlanetData planetDatas)
         {
@@ -19,7 +20,13 @@ namespace VSOP87
         private void SetTime(DateTime TDB)
         {
             double JD = ToJulianDate(TDB);
-            this.phi = (JD - 2451545.0d) / 365250d;
+            phi = (JD - 2451545.0d) / 365250d;
+
+            t = new double[6];
+            for (int i = 0; i < 6; i++)
+            {
+                t[i] = Math.Pow(phi, i);
+            }
         }
 
         private double ToJulianDate(DateTime TDB)
@@ -27,39 +34,49 @@ namespace VSOP87
             return TDB.ToOADate() + 2415018.5d;
         }
 
-        public double[] CalcPlanet (DateTime TDB)
-        {
-            double[] LBR = new double[3];
-            ParallelLoopResult result = Parallel.For(0, 3, ic =>
-            {
-                LBR[ic] = CalcIC(ic, TDB);
-            });
-            return LBR;
-        }
-
-        public double CalcIC(int ic,DateTime TDB)
+        public double[] CalcPlanet(DateTime TDB)
         {
             SetTime(TDB);
-            double[] R = new double[6];
-            double r=0d;
-           
-            for(int it=5; it>=0;it--)
+            double[] r = new double[6];
+            double u = 0d;
+            double cu = 0d;
+            double su = 0d;
+            for (int ic = 0; ic < 6; ic++)
             {
-                double counter = 0d;
-                if (planetDatas.variables[ic].PowerTables[it].Terms == null) continue;
-                foreach(Term term in planetDatas.variables[ic].PowerTables[it].Terms)
+                for (int it = 5; it >= 0; it--)
                 {
-                    counter+=term.A* Math.Cos(term.B + term.C * phi);
+                    if (planetDatas.variables[ic].PowerTables == null) continue;
+                    if (planetDatas.variables[ic].PowerTables[it].Terms == null) continue;
+                    foreach (Term term in planetDatas.variables[ic].PowerTables[it].Terms)
+                    {
+                        u = term.B + term.C * phi;
+                        cu = Math.Cos(u);
+                        su = Math.Sin(u);
+                        r[ic] = r[ic] + (term.A * cu * t[it]);
+
+                        // Original resolution specification.
+                        if (planetDatas.iver == Version.VSOP87) continue;
+
+                        // Derivative for 3 variable
+                        if (it == 0)
+                            r[ic + 3] += (0 * it * term.A * cu) - (t[it] * term.A * term.C * su);
+                        else
+                            r[ic + 3] += (t[it - 1] * it * term.A * cu) - (t[it] * term.A * term.C * su);
+                    }
+
                 }
-                R[it] = counter;
             }
 
-            r = (((((R[5] * phi + R[4]) * phi + R[3]) * phi + R[2]) * phi + R[1]) * phi + R[0]);
-            
+            // Original resolution specification.
+            if (planetDatas.iver == Version.VSOP87) return r;
+
+            for (int ic = 0; ic < 3; ic++)
+            {
+                r[ic + 3] /= 365250d;
+            }
             return r;
-
-
         }
+
 
     }
 }
