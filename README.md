@@ -13,4 +13,4 @@ all 6 version supported
 
 
 
- VSOP87 algorithm rewrite by C#
+ VSOP87 algorithm remastered in C#
