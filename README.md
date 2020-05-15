@@ -9,7 +9,7 @@
 
 如果喜欢的话可以给我一颗小星星吗？
 
-Use original data from ftp://ftp.imcce.fr/pub/ephem/planets/vsop87/ and completely calculate
+Use original data and completely calculate
 
 position and velocity
 
