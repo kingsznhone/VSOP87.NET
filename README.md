@@ -17,5 +17,12 @@ all 6 version supported
 
 Star me if you like it.
 
+
+原始数据下载地址
+
+Original data download 
+
+ftp://ftp.imcce.fr/pub/ephem/planets/vsop87/
+
  VSOP87 algorithm remastered in C#
 
