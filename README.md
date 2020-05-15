@@ -19,5 +19,3 @@ Star me if you like it.
 
  VSOP87 algorithm remastered in C#
 
-
-吐槽一句。87真是贼几把快……目测比2013快了几十倍
