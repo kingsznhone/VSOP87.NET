@@ -19,5 +19,7 @@ VSOP87 algorithm remastered in C#
 
 It's kinda RAM db that 80's would never imaging a computer's RAM can hold that huge amout data 
 
+It's loaded to RAM when initiate VSOP calculator class
+
 # Enviroment 
 .NET 6 Runtime
