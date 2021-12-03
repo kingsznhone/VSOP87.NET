@@ -15,5 +15,9 @@ Original data and solution download
 
 VSOP87 algorithm remastered in C#
 
+## About VSOP87DATA.BIN
+
+It's kinda RAM db that 80's would never imaging a computer's RAM can hold that huge amout data 
+
 # Enviroment 
 .NET 6 Runtime
