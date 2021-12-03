@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace VSOP87
 {
-    public static class Untility
+    public static class Utility
     {
         public static List<VSOPBody> AvailableBody(VSOPVersion ver)
         {
