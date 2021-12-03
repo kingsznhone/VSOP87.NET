@@ -1,28 +1,19 @@
-# VSOP87-CSharp
-## 开发未完成
+# VSOP87.NET 
 ## Under Development
-#2020.05.15 
 
-直接从原版数据文件读取并计算
+### 2021.12.04 
 
-完成了所有6种模式的支持
+I make a data converter
 
-如果喜欢的话可以给我一颗小星星吗？
+Converting text data file into binary serialized file and embed in core DLL
 
-Use original data and completely calculate
+All 6 version solution supported
 
-position and velocity
+Original data and solution download 
 
-all 6 version supported
+ ftp://ftp.imcce.fr/pub/ephem/planets/vsop87/
 
-Star me if you like it.
+VSOP87 algorithm remastered in C#
 
-
-原始数据下载地址
-
-Original data download 
-
-ftp://ftp.imcce.fr/pub/ephem/planets/vsop87/
-
- VSOP87 algorithm remastered in C#
-
+# Enviroment 
+.NET 6 Runtime
