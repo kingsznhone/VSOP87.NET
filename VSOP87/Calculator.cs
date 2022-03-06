@@ -6,6 +6,7 @@ namespace VSOP87
     public class Calculator
     {
         public List<PlanetTable> VSOP87DATA;
+        public VSOPVersion Version;
 
         public Calculator()
         {
@@ -15,14 +16,25 @@ namespace VSOP87
                 var bf = new BinaryFormatter();
                 VSOP87DATA = (List<PlanetTable>)bf.Deserialize(ms);
             }
-            
         }
 
-        public double [] CalcPlanet(ref PlanetTable Planet, DateTime TDB)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Planet">Dataset of a planet</param>
+        /// <param name="TDB">Barycentric Dynamical Time</param>
+        /// <returns></returns>
+        public double[] CalcPlanet(ref PlanetTable Planet, DateTime TDB)
         {
             return CalcPlanet(ref Planet, TimeConverter.ToJulianDate(TDB));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Planet">Dataset of a planet</param>
+        /// <param name="JD">JulianDate</param>
+        /// <returns></returns>
         public double[] CalcPlanet(ref PlanetTable Planet, double JD)
         {
             double phi = (JD - 2451545.0d) / 365250d;
