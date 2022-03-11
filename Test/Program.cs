@@ -36,7 +36,7 @@ void FormattedPrint(VSOPResult Result)
     {
         var ResultELL = ((VSOPResultELL)Result);
         Console.WriteLine();
-        Console.WriteLine($"VSOP87 Elliptic Elements Of {Enum.GetName(Result.Body)}");
+        Console.WriteLine($"{Enum.GetName(Result.Version)} Elliptic Elements Of {Enum.GetName(Result.Body)}");
         Console.WriteLine("Dynamical equinox and ecliptic J2000.");
         Console.WriteLine($"UTC: {Result.Time.UTC.ToString("o")}");
         Console.WriteLine("=====================================================================");
@@ -59,21 +59,19 @@ void FormattedPrint(VSOPResult Result)
     {
         var ResultXYZ = ((VSOPResultXYZ)Result);
         Console.WriteLine();
+        Console.WriteLine($"{Enum.GetName(Result.Version)} Rectangular Coordinates Of {Enum.GetName(Result.Body)}");
         if (ResultXYZ.Version == VSOPVersion.VSOP87A)
         {
-            Console.WriteLine($"VSOP87A Rectangular Coordinates Of {Enum.GetName(ResultXYZ.Body)}");
             Console.WriteLine("Heliocentric Positions And Velocities");
             Console.WriteLine("Dynamical Equinox And Ecliptic J2000.");
         }
         if (ResultXYZ.Version == VSOPVersion.VSOP87C)
         {
-            Console.WriteLine($"VSOP87C Rectangular Coordinates Of {Enum.GetName(ResultXYZ.Body)}");
             Console.WriteLine("Heliocentric Positions And Velocities");
             Console.WriteLine("Dynamical Equinox And Ecliptic Of The Date.");
         }
         if (ResultXYZ.Version == VSOPVersion.VSOP87E)
         {
-            Console.WriteLine($"VSOP87E Rectangular Coordinates Of {Enum.GetName(ResultXYZ.Body)}");
             Console.WriteLine("Barycentric Positions And Velocities");
             Console.WriteLine("Dynamical Equinox And Ecliptic J2000.");
         }
@@ -92,15 +90,14 @@ void FormattedPrint(VSOPResult Result)
     {
         var ResultLBR = (VSOPResultLBR)Result;
         Console.WriteLine();
+        Console.WriteLine($"{Enum.GetName(Result.Version)} Rectangular Coordinates Of {Enum.GetName(Result.Body)}");
         if (ResultLBR.Version == VSOPVersion.VSOP87B)
         {
-            Console.WriteLine($"VSOP87B Spherical Coordinates Of {Enum.GetName(ResultLBR.Body)}");
             Console.WriteLine("Heliocentric Positions And Velocities");
             Console.WriteLine("Dynamical Equinox And Ecliptic J2000.");
         }
         if (ResultLBR.Version == VSOPVersion.VSOP87D)
         {
-            Console.WriteLine($"VSOP87D Spherical Coordinates Of {Enum.GetName(ResultLBR.Body)}");
             Console.WriteLine("Heliocentric Positions And Velocities");
             Console.WriteLine("Dynamical Equinox And Ecliptic Of The Date.");
         }
