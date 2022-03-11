@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
 namespace VSOP87
 {
@@ -38,30 +33,30 @@ namespace VSOP87
     public enum VSOPVersion
     {
 
-        /* 0: VSOP87 (initial solution).
-        *    elliptic coordinates
-        *    dynamical equinox and ecliptic J2000.
-        *  1: VSOP87A.
-        *    rectangular coordinates
-        *    heliocentric positions and velocities
-        *    dynamical equinox and ecliptic J2000.
-        *  2: VSOP87A.
-        *    spherical coordinates
-        *    heliocentric positions and velocities
-        *    dynamical equinox and ecliptic J2000.
-        *  3: VSOP87C.
-        *    rectangular coordinates
-        *    heliocentric positions and velocities
-        *    dynamical equinox and ecliptic of the date.
-        *  4: VSOP87D.
-        *    spherical coordinates
-        *    heliocentric positions and velocities
-        *    dynamical equinox and ecliptic of the date.
-        *  5: VSOP87E.
-        *    rectangular coordinates
-        *    barycentric positions and velocities
-        *    dynamical equinox and ecliptic J2000.
-        */
+        // 0: VSOP87 (initial solution).
+        //    elliptic coordinates
+        //    dynamical equinox and ecliptic J2000.
+        //  1: VSOP87A.
+        //    rectangular coordinates
+        //    heliocentric positions and velocities
+        //    dynamical equinox and ecliptic J2000.
+        //  2: VSOP87A.
+        //    spherical coordinates
+        //    heliocentric positions and velocities
+        //    dynamical equinox and ecliptic J2000.
+        //  3: VSOP87C.
+        //    rectangular coordinates
+        //    heliocentric positions and velocities
+        //    dynamical equinox and ecliptic of the date.
+        //  4: VSOP87D.
+        //    spherical coordinates
+        //    heliocentric positions and velocities
+        //    dynamical equinox and ecliptic of the date.
+        //  5: VSOP87E.
+        //    rectangular coordinates
+        //    barycentric positions and velocities
+        //    dynamical equinox and ecliptic J2000.
+
 
         /// <summary>
         /// Elliptic coordinates J2000
@@ -79,7 +74,7 @@ namespace VSOP87
         VSOP87B = 2,
 
         /// <summary>
-        /// VSOP87C : Heliocentric rectangular coordinates of date
+        /// Heliocentric rectangular coordinates of date
         /// </summary>
         VSOP87C = 3,
 

@@ -11,7 +11,7 @@ using VSOP87;
 List<PlanetTable> VSOP87DATA = new List<PlanetTable>();
 
 //All original data file location
-DirectoryInfo dir = new DirectoryInfo(@"D:\VSOP87DATA");
+DirectoryInfo dir = new DirectoryInfo(@"D:\VS Project\VSOP87DATA");
 
 foreach (FileInfo file in dir.GetFiles())
 {
@@ -25,11 +25,11 @@ DumpData(OutputDir, VSOP87DATA);
 
 
 #region Verify Binary Data
-VSOP87DATA = new List<PlanetTable>();
+PlanetTable[] VerifyVSOP87DATA;
 using (FileStream fs = new FileStream(Path.Combine(OutputDir.FullName, "VSOP87DATA.BIN"), FileMode.Open))
 {
     var bf = new BinaryFormatter();
-    VSOP87DATA =  (List<PlanetTable>)bf.Deserialize(fs);
+    VerifyVSOP87DATA = (PlanetTable[])bf.Deserialize(fs);
     Console.WriteLine(Path.Combine(OutputDir.FullName, "VSOP87DATA.BIN") + Environment.NewLine + "Load OK");
     Console.WriteLine();
 }
@@ -38,7 +38,7 @@ Calculator vsop = new Calculator();
 PlanetTable planet = VSOP87DATA.Where(x => x.ibody == VSOPBody.MERCURY).Where(x => x.iver == VSOP87.VSOPVersion.VSOP87).First();
 
 Stopwatch sw = Stopwatch.StartNew();
-double[] results = vsop.CalcPlanet(ref planet, 2268920.0);
+var results = vsop.GetPlanet(VSOPBody.MERCURY, VSOPVersion.VSOP87, new VSOPTime(DateTime.Now.ToUniversalTime()));
 sw.Stop();
 
 double ticks = sw.ElapsedTicks;
@@ -48,10 +48,6 @@ double microsecond = (ticks / Freq) * 1000000;
 Console.WriteLine($"Elapsed milliseconds: {milliseconds} ms");
 Console.WriteLine($"Elapsed microsecond: {microsecond} us");
 
-foreach (double r in results)
-{
-    Console.WriteLine(r);
-}
 
 #endregion
 
@@ -154,14 +150,16 @@ static void DumpData(DirectoryInfo dir, List<PlanetTable> VSOP87DATA)
         File.Delete(filename);
     }
 
+    PlanetTable[] buffer = VSOP87DATA.ToArray();
+
     using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
     {
         BinaryFormatter bf = new BinaryFormatter();
 #pragma warning disable SYSLIB0011
-        bf.Serialize(fs, VSOP87DATA);
+        bf.Serialize(fs, buffer);
 #pragma warning restore SYSLIB0011
     }
 
-    Console.WriteLine(filename +Environment.NewLine+ "Dump OK");
+    Console.WriteLine(filename + Environment.NewLine + "Dump OK");
     Console.WriteLine();
 }
