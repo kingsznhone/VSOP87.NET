@@ -12,6 +12,15 @@ Many Rewrite versions of VSOP87 is just a translation from FORTRAN.
 
 I did a little bit more than translation.
 
+The Hotspot of VSOP87 is located in 
+
+``` (su, cu) = Math.SinCos(u); ```
+
+if cost almost 90%+ CPU clocks.
+
+I use default sincos function to ensure precision.
+
+If replacing with fast sincos funtion. this Algorithm will become much faster but less precision.
 
 ## Features
 
@@ -24,6 +33,13 @@ I did a little bit more than translation.
 
 
 ## Update Log
+
+### 2022.06.05
+
+Code Cleaning.
+
+Performance optimization.
+
 ### 2022.03.12
 
 A lot of new features.
