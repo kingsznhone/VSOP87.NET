@@ -20,11 +20,15 @@ foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
         FormattedPrint(results);
         Console.WriteLine($"Time Used: {vsop.TimeUsed.TotalMilliseconds} ms");
         Console.WriteLine();
+        
     }
 }
 
-PerformanceTest(1000);
+Console.Write("Press Enter To Start Performance Test...");
+Console.ReadLine();
+PerformanceTest(10000);
 
+//PerformanceTestSingle(10000);
 
 Console.Write("Press Enter To Exit...");
 Console.ReadLine();
@@ -120,13 +124,12 @@ double ModuloCircle(double RAD)
     return RAD;
 }
 
-
 void PerformanceTest(int cycle)
 {
-    Console.WriteLine();
     Console.WriteLine("=====================Start Performance Test=====================");
     Stopwatch sw = new Stopwatch();
     sw.Start();
+    object lockobject = new object();
     int completedCycle = 0;
     var result = Parallel.For(0, cycle, (i) =>
     {
@@ -140,16 +143,43 @@ void PerformanceTest(int cycle)
                     //FormattedPrint(results);
                 }
             }
-
-            completedCycle++;
-            if (completedCycle % 1000 == 0)
+            lock(lockobject)
             {
-                Console.WriteLine($"Cycle: {completedCycle,-10}  { sw.Elapsed.TotalMilliseconds,10} ms");
+                completedCycle++;
+                if (completedCycle % 1000 == 0)
+                {
+                    Console.WriteLine($"Cycle: {completedCycle,-10}  {sw.Elapsed.TotalMilliseconds,10} ms");
+                }
             }
         }
     });
 
     sw.Stop();
-    Console.WriteLine($"Cycle: {cycle,-10}  { sw.Elapsed.TotalMilliseconds,10} ms");
+    Console.WriteLine($"Performance Test Finished.");
+    Console.WriteLine($"Time Used: {sw.Elapsed.TotalMilliseconds,10} ms");
 }
+
+void PerformanceTestSingle(int cycle)
+{
+    Console.WriteLine("=====================Start Performance Test=====================");
+    Stopwatch sw = new Stopwatch();
+    sw.Start();
+    object lockobject = new();
+    int completedCycle = 0;
+    while (completedCycle < cycle)
+    {
+        foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
+        {
+            foreach (VSOPBody ib in Utility.AvailableBody(iv))
+            {
+                vsop.GetPlanet(ib, iv, vTime);
+                completedCycle++;
+            }
+        }
+    }
+    sw.Stop();
+    Console.WriteLine($"Performance Test Finished.");
+    Console.WriteLine($"Time Used: {sw.Elapsed.TotalMilliseconds,10} ms");
+}
+
 

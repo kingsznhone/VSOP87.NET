@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace VSOP87
 {
     public class Calculator
     {
-        public readonly PlanetTable[] VSOP87DATA;
+        public readonly List<PlanetTable> VSOP87DATA;
 
         public TimeSpan TimeUsed;
 
@@ -15,11 +16,10 @@ namespace VSOP87
         {
             sw = new Stopwatch();
             TimeUsed = new TimeSpan(0);
-            using (MemoryStream ms = new MemoryStream(Resource.VSOP87DATA))
+            var debug = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            using (Stream ms =Assembly.GetExecutingAssembly().GetManifestResourceStream("VSOP87.Resources.VSOP87DATA.BIN"))
             {
-                #pragma warning disable SYSLIB0011 // 类型或成员已过时
-                VSOP87DATA = (PlanetTable[])new BinaryFormatter().Deserialize(ms);
-                #pragma warning restore SYSLIB0011 // 类型或成员已过时
+                VSOP87DATA = (List<PlanetTable>)new BinaryFormatter().Deserialize(ms);
             }
         }
 
@@ -35,8 +35,9 @@ namespace VSOP87
         {
             if (Utility.CheckAvailability(iver, ibody))
             {
-                int tableIndex = Array.FindIndex(VSOP87DATA, x => x.iver == iver && x.ibody == ibody);
-                double[] result = Calculate(tableIndex, VSOPTime.ToJulianDate(time.TDB));
+                int tableIndex = VSOP87DATA.FindIndex(x => x.version == iver && x.body == ibody);
+
+                double[] result = Calculate(VSOP87DATA[tableIndex], VSOPTime.ToJulianDate(time.TDB));
 
                 switch (iver)
                 {
@@ -61,7 +62,7 @@ namespace VSOP87
         /// <param name="Planet">Dataset of a planet</param>
         /// <param name="JD">Julian Date</param>
         /// <returns></returns>
-        private double[] Calculate(int tableindex, double JD)
+        private double[] Calculate(PlanetTable Planet, double JD)
         {
             sw.Restart();
             double phi = (JD - 2451545.0d) / 365250d;
@@ -74,40 +75,41 @@ namespace VSOP87
 
             double[] Result = new double[6];
             double u, cu, su;
-
+            double tit;//t[it]
             for (int iv = 0; iv < 6; iv++)
             {
                 for (int it = 5; it >= 0; it--)
                 {
-                    if (VSOP87DATA[tableindex].variables[iv].PowerTables == null) continue;
-                    if (VSOP87DATA[tableindex].variables[iv].PowerTables[it].Terms == null) continue;
-                    foreach (Term term in VSOP87DATA[tableindex].variables[iv].PowerTables[it].Terms)
+                    tit = t[it];
+                    if (Planet.variables[iv].PowerTables == null) continue;
+                    if (Planet.variables[iv].PowerTables[it].Terms == null) continue;
+                    foreach (Term term in Planet.variables[iv].PowerTables[it].Terms)
                     {
                         u = term.B + term.C * phi;
                         (su, cu) = Math.SinCos(u);
-                        Result[iv] += (term.A * cu * t[it]);
+                        Result[iv] += term.A * cu * tit;
 
                         // Original resolution specification.
-                        if (VSOP87DATA[tableindex].iver == VSOPVersion.VSOP87) continue;
+                        if (Planet.version == VSOPVersion.VSOP87) continue;
 
                         // Derivative of 3 variables
                         if (it == 0)
-                            Result[iv + 3] += (0 * it * term.A * cu) - (t[it] * term.A * term.C * su);
+                            Result[iv + 3] += (0 * it * term.A * cu) - (tit * term.A * term.C * su);
                         else
-                            Result[iv + 3] += (t[it - 1] * it * term.A * cu) - (t[it] * term.A * term.C * su);
+                            Result[iv + 3] += (t[it - 1] * it * term.A * cu) - (tit * term.A * term.C * su);
                     }
                 }
             }
 
             // Original resolution specification.
-            if (VSOP87DATA[tableindex].iver == VSOPVersion.VSOP87) return Result;
+            if (Planet.version == VSOPVersion.VSOP87) return Result;
             for (int ic = 0; ic < 3; ic++)
             {
                 Result[ic + 3] /= 365250d;
             }
 
             //Modulo Spherical longitude L into [0,2*pi)
-            if (Utility.GetCoordinatesType(VSOP87DATA[tableindex].iver) == CoordinatesType.Spherical)
+            if (Utility.GetCoordinatesType(Planet.version) == CoordinatesType.Spherical)
             {
                 Result[0] = ModuloCircle(Result[0]);
             }

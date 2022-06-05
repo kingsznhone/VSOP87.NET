@@ -2,10 +2,117 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="VSOP87DATA\VSOP87.emb" />
+    <None Remove="VSOP87DATA\VSOP87.jup" />
+    <None Remove="VSOP87DATA\VSOP87.mar" />
+    <None Remove="VSOP87DATA\VSOP87.mer" />
+    <None Remove="VSOP87DATA\VSOP87.nep" />
+    <None Remove="VSOP87DATA\VSOP87.sat" />
+    <None Remove="VSOP87DATA\VSOP87.ura" />
+    <None Remove="VSOP87DATA\VSOP87.ven" />
+    <None Remove="VSOP87DATA\VSOP87A.ear" />
+    <None Remove="VSOP87DATA\VSOP87A.emb" />
+    <None Remove="VSOP87DATA\VSOP87A.jup" />
+    <None Remove="VSOP87DATA\VSOP87A.mar" />
+    <None Remove="VSOP87DATA\VSOP87A.mer" />
+    <None Remove="VSOP87DATA\VSOP87A.nep" />
+    <None Remove="VSOP87DATA\VSOP87A.sat" />
+    <None Remove="VSOP87DATA\VSOP87A.ura" />
+    <None Remove="VSOP87DATA\VSOP87A.ven" />
+    <None Remove="VSOP87DATA\VSOP87B.ear" />
+    <None Remove="VSOP87DATA\VSOP87B.jup" />
+    <None Remove="VSOP87DATA\VSOP87B.mar" />
+    <None Remove="VSOP87DATA\VSOP87B.mer" />
+    <None Remove="VSOP87DATA\VSOP87B.nep" />
+    <None Remove="VSOP87DATA\VSOP87B.sat" />
+    <None Remove="VSOP87DATA\VSOP87B.ura" />
+    <None Remove="VSOP87DATA\VSOP87B.ven" />
+    <None Remove="VSOP87DATA\VSOP87C.ear" />
+    <None Remove="VSOP87DATA\VSOP87C.jup" />
+    <None Remove="VSOP87DATA\VSOP87C.mar" />
+    <None Remove="VSOP87DATA\VSOP87C.mer" />
+    <None Remove="VSOP87DATA\VSOP87C.nep" />
+    <None Remove="VSOP87DATA\VSOP87C.sat" />
+    <None Remove="VSOP87DATA\VSOP87C.ura" />
+    <None Remove="VSOP87DATA\VSOP87C.ven" />
+    <None Remove="VSOP87DATA\VSOP87D.ear" />
+    <None Remove="VSOP87DATA\VSOP87D.jup" />
+    <None Remove="VSOP87DATA\VSOP87D.mar" />
+    <None Remove="VSOP87DATA\VSOP87D.mer" />
+    <None Remove="VSOP87DATA\VSOP87D.nep" />
+    <None Remove="VSOP87DATA\VSOP87D.sat" />
+    <None Remove="VSOP87DATA\VSOP87D.ura" />
+    <None Remove="VSOP87DATA\VSOP87D.ven" />
+    <None Remove="VSOP87DATA\VSOP87E.ear" />
+    <None Remove="VSOP87DATA\VSOP87E.jup" />
+    <None Remove="VSOP87DATA\VSOP87E.mar" />
+    <None Remove="VSOP87DATA\VSOP87E.mer" />
+    <None Remove="VSOP87DATA\VSOP87E.nep" />
+    <None Remove="VSOP87DATA\VSOP87E.sat" />
+    <None Remove="VSOP87DATA\VSOP87E.sun" />
+    <None Remove="VSOP87DATA\VSOP87E.ura" />
+    <None Remove="VSOP87DATA\VSOP87E.ven" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.emb" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.jup" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.mar" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.mer" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.nep" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.sat" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.ura" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87.ven" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.ear" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.emb" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.jup" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.mar" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.mer" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.nep" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.sat" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.ura" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87A.ven" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.ear" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.jup" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.mar" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.mer" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.nep" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.sat" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.ura" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87B.ven" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.ear" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.jup" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.mar" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.mer" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.nep" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.sat" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.ura" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87C.ven" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.ear" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.jup" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.mar" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.mer" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.nep" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.sat" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.ura" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87D.ven" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.ear" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.jup" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.mar" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.mer" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.nep" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.sat" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.sun" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.ura" />
+    <EmbeddedResource Include="VSOP87DATA\VSOP87E.ven" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\VSOP87\VSOP87.csproj" />

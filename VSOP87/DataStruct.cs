@@ -89,24 +89,35 @@ namespace VSOP87
         VSOP87E = 5,
     }
 
+    public enum VSOPDATAEXT
+    {
+
+    }
 
     [Serializable]
     public struct PlanetTable
     {
+        public VSOPVersion version;
+        public VSOPBody body;
         public VariableTable[] variables;
-        public VSOPVersion iver;
-        public VSOPBody ibody;
     }
 
     [Serializable]
     public struct VariableTable
     {
+        public VSOPVersion version;
+        public VSOPBody body;
+        public int ic;
         public PowerTable[] PowerTables;
     }
 
     [Serializable]
     public struct PowerTable
     {
+        public VSOPVersion version;
+        public VSOPBody body;
+        public int ic;
+        public int it;
         public Header header;
         public Term[] Terms;
     }
@@ -114,26 +125,53 @@ namespace VSOP87
     [Serializable]
     public struct Header
     {
-        public int iv; //VSOP87 version
-        public string body; //name of body
-        public int ib; //number of body
-        public int ic; //index of coordinate
-        public int it; //degree alpha of time variable T 
-        public int nt; //number of terms of series
+        /// <summary>
+        /// VSOP87 version
+        /// </summary>
+        public VSOPVersion Version;
+
+        /// <summary>
+        /// number of body
+        /// </summary>
+        public VSOPBody body;
+        /// <summary>
+        /// index of coordinate
+        /// </summary>
+        public int ic;
+        /// <summary>
+        /// degree alpha of time variable T 
+        /// </summary>
+        public int it;
+        /// <summary>
+        /// number of terms of series
+        /// </summary>
+        public int nt; 
     }
 
     [Serializable]
     [StructLayout(LayoutKind.Explicit)]
     public struct Term
     {
+        /// <summary>
+        /// rank of the term in a serie
+        /// </summary>
         [FieldOffset(0)]
-        public long rank; //rank of the term in a serie
+        public long rank;
+        /// <summary>
+        /// amplitude A
+        /// </summary>
         [FieldOffset(8)]
-        public double A; //amplitude A
+        public double A;
+        /// <summary>
+        /// phase     B 
+        /// </summary>
         [FieldOffset(16)]
-        public double B; //phase     B   
+        public double B;
+        /// <summary>
+        /// frequency C
+        /// </summary>
         [FieldOffset(24)]
-        public double C; //frequency C
+        public double C; 
     }
 
 }
