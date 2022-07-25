@@ -16,7 +16,7 @@ The Hotspot of VSOP87 is located in
 
 ``` (su, cu) = Math.SinCos(u); ```
 
-if cost almost 90%+ CPU clocks.
+it cost almost 90%+ CPU clocks.
 
 I use default sincos function to ensure precision.
 
