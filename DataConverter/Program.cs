@@ -1,7 +1,5 @@
-﻿using System.Diagnostics;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
-using VSOP87;
 
 namespace VSOP87
 {
@@ -24,15 +22,15 @@ namespace VSOP87
                 VSOP87DATA.Add(ReadPlanet(file));
             }
 
-            //Dump 
-            
+            //Dump
+
             DirectoryInfo OutputDir = new DirectoryInfo(Directory.GetCurrentDirectory());
             DumpData(OutputDir, VSOP87DATA);
 
             Console.ReadLine();
         }
 
-        static PlanetTable ReadPlanet(string file)
+        private static PlanetTable ReadPlanet(string file)
         {
             string[] Extensions = { @"sun", @"mer", @"ven", @"ear", @"mar", @"jup", @"sat", @"ura", @"nep", @"emb" };
 
@@ -50,7 +48,6 @@ namespace VSOP87
             {
                 planetdata.variables[ic].PowerTables = new PowerTable[6];
             }
-
 
             Header H;
             string line;
@@ -86,7 +83,7 @@ namespace VSOP87
             return planetdata;
         }
 
-        static Header ReadHeader(string line)
+        private static Header ReadHeader(string line)
         {
             Header H = new Header();
 
@@ -96,7 +93,7 @@ namespace VSOP87
 
             H.body = (VSOPBody)Enum.Parse(typeof(VSOPBody), line.Substring(lineptr, 7).Trim());
             lineptr += 19;
-            
+
             H.ic = Convert.ToInt32(line.Substring(lineptr, 1).Trim()) - 1;
             lineptr += 18;
 
@@ -107,7 +104,7 @@ namespace VSOP87
             return H;
         }
 
-        static void ReadTerm(string line, ref Term T)
+        private static void ReadTerm(string line, ref Term T)
         {
             int lineptr;
 
@@ -125,10 +122,10 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="dir"></param>
-        static void DumpData(DirectoryInfo dir, List<PlanetTable> VSOP87DATA)
+        private static void DumpData(DirectoryInfo dir, List<PlanetTable> VSOP87DATA)
         {
             string filename = Path.Combine(dir.FullName, "VSOP87DATA.BIN");
             if (File.Exists(filename))

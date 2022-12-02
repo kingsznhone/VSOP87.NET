@@ -2,12 +2,9 @@
 {
     public static class Utility
     {
-        public static List<VSOPBody> AvailableBody(VSOPVersion ver)
+        public static List<VSOPBody> AvailableBody(VSOPVersion ver) => ver switch
         {
-            switch (ver)
-            {
-                case VSOPVersion.VSOP87:
-                    return new List<VSOPBody>(new VSOPBody[] {
+            VSOPVersion.VSOP87 => new List<VSOPBody>(new VSOPBody[] {
                         VSOPBody.MERCURY,
                         VSOPBody.VENUS,
                         VSOPBody.MARS,
@@ -15,10 +12,9 @@
                         VSOPBody.SATURN,
                         VSOPBody.URANUS,
                         VSOPBody.NEPTUNE,
-                        VSOPBody.EMB });
+                        VSOPBody.EMB }),
 
-                case VSOPVersion.VSOP87A:
-                    return new List<VSOPBody>(new VSOPBody[] {
+            VSOPVersion.VSOP87A => new List<VSOPBody>(new VSOPBody[] {
                         VSOPBody.MERCURY,
                         VSOPBody.VENUS,
                         VSOPBody.EARTH,
@@ -27,10 +23,9 @@
                         VSOPBody.SATURN,
                         VSOPBody.URANUS,
                         VSOPBody.NEPTUNE,
-                        VSOPBody.EMB });
+                        VSOPBody.EMB }),
 
-                case VSOPVersion.VSOP87B:
-                    return new List<VSOPBody>(new VSOPBody[] {
+            VSOPVersion.VSOP87B => new List<VSOPBody>(new VSOPBody[] {
                         VSOPBody.MERCURY,
                         VSOPBody.VENUS,
                         VSOPBody.EARTH,
@@ -39,10 +34,9 @@
                         VSOPBody.SATURN,
                         VSOPBody.URANUS,
                         VSOPBody.NEPTUNE,
-                        });
+                        }),
 
-                case VSOPVersion.VSOP87C:
-                    return new List<VSOPBody>(new VSOPBody[] {
+            VSOPVersion.VSOP87C => new List<VSOPBody>(new VSOPBody[] {
                         VSOPBody.MERCURY,
                         VSOPBody.VENUS,
                         VSOPBody.EARTH,
@@ -51,10 +45,9 @@
                         VSOPBody.SATURN,
                         VSOPBody.URANUS,
                         VSOPBody.NEPTUNE,
-                        });
+                        }),
 
-                case VSOPVersion.VSOP87D:
-                    return new List<VSOPBody>(new VSOPBody[] {
+            VSOPVersion.VSOP87D => new List<VSOPBody>(new VSOPBody[] {
                         VSOPBody.MERCURY,
                         VSOPBody.VENUS,
                         VSOPBody.EARTH,
@@ -63,10 +56,9 @@
                         VSOPBody.SATURN,
                         VSOPBody.URANUS,
                         VSOPBody.NEPTUNE,
-                        });
+                        }),
 
-                case VSOPVersion.VSOP87E:
-                    return new List<VSOPBody>(new VSOPBody[] {
+            VSOPVersion.VSOP87E => new List<VSOPBody>(new VSOPBody[] {
                         VSOPBody.SUN,
                         VSOPBody.MERCURY,
                         VSOPBody.VENUS,
@@ -76,53 +68,34 @@
                         VSOPBody.SATURN,
                         VSOPBody.URANUS,
                         VSOPBody.NEPTUNE,
-                        });
+                        }),
 
-                default: return new List<VSOPBody>();
-            }
-        }
+            _ => new List<VSOPBody>()
+        };
 
         public static bool CheckAvailability(VSOPVersion ver, VSOPBody body)
         {
             return AvailableBody(ver).Exists(x => x == body);
         }
 
-        public static CoordinatesType GetCoordinatesType(VSOPVersion ver)
+        public static CoordinatesType GetCoordinatesType(VSOPVersion ver) => ver switch
         {
-            switch (ver)
-            {
-                case VSOPVersion.VSOP87:
-                    return CoordinatesType.Elliptic;
-                case VSOPVersion.VSOP87A or VSOPVersion.VSOP87C or VSOPVersion.VSOP87E:
-                    return CoordinatesType.Rectangular;
-                case VSOPVersion.VSOP87B or VSOPVersion.VSOP87D:
-                    return CoordinatesType.Spherical;
-                default: throw new ArgumentException();
-            }
-        }
+            VSOPVersion.VSOP87 => CoordinatesType.Elliptic,
+            VSOPVersion.VSOP87A or VSOPVersion.VSOP87C or VSOPVersion.VSOP87E => CoordinatesType.Rectangular,
+            VSOPVersion.VSOP87B or VSOPVersion.VSOP87D => CoordinatesType.Spherical,
+            _ => throw new ArgumentException()
+        };
 
-        public static CoordinatesRefrence GetCoordinatesRefrence(VSOPVersion ver)
+        public static CoordinatesRefrence GetCoordinatesRefrence(VSOPVersion ver) => ver switch
         {
-            switch (ver)
-            {
-                case VSOPVersion.VSOP87E:
-                    return CoordinatesRefrence.Barycentric;
+            VSOPVersion.VSOP87E => CoordinatesRefrence.Barycentric,
+            _ => CoordinatesRefrence.Heliocentric
+        };
 
-                default: return CoordinatesRefrence.Heliocentric;
-            }
-        }
-
-        public static ReferenceFrame GetFrameRefrence(VSOPVersion ver)
+        public static ReferenceFrame GetFrameRefrence(VSOPVersion ver) => ver switch
         {
-            switch (ver)
-            {
-                case VSOPVersion.VSOP87C or VSOPVersion.VSOP87D:
-                    return ReferenceFrame.EclipticOfDate;
-                default: return ReferenceFrame.EclipticJ2000;
-            }
-        }
-
-
+            VSOPVersion.VSOP87C or VSOPVersion.VSOP87D => ReferenceFrame.EclipticOfDate,
+            _ => ReferenceFrame.EclipticJ2000
+        };
     }
-
 }

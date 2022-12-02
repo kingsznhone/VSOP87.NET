@@ -1,6 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.Diagnostics;
-using System.Globalization;
 using VSOP87;
 
 Calculator vsop = new Calculator();
@@ -20,7 +19,6 @@ foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
         FormattedPrint(results);
         Console.WriteLine($"Time Used: {vsop.TimeUsed.TotalMilliseconds} ms");
         Console.WriteLine();
-        
     }
 }
 
@@ -32,7 +30,6 @@ PerformanceTest(10000);
 
 Console.Write("Press Enter To Exit...");
 Console.ReadLine();
-
 
 void FormattedPrint(VSOPResult Result)
 {
@@ -54,7 +51,6 @@ void FormattedPrint(VSOPResult Result)
         Console.WriteLine("pi:    perihelion longitude");
         Console.WriteLine("i:     inclination");
         Console.WriteLine("omega: ascending node longitude");
-
     }
 
     if (Result.Version == VSOPVersion.VSOP87A ||
@@ -89,7 +85,6 @@ void FormattedPrint(VSOPResult Result)
         Console.WriteLine(String.Format("{0,-30} : {1,30}", "velocity z (au/day)", ResultXYZ.dz));
     }
 
-
     if (Result.Version == VSOPVersion.VSOP87B || Result.Version == VSOPVersion.VSOP87D)
     {
         var ResultLBR = (VSOPResultLBR)Result;
@@ -107,7 +102,7 @@ void FormattedPrint(VSOPResult Result)
         }
         Console.WriteLine($"UTC: {ResultLBR.Time.UTC.ToString("o")}");
         Console.WriteLine("=====================================================================");
-        Console.WriteLine(String.Format("{0,-30} : {1,30}", "longitude (rd)",ResultLBR.L));
+        Console.WriteLine(String.Format("{0,-30} : {1,30}", "longitude (rd)", ResultLBR.L));
         Console.WriteLine(String.Format("{0,-30} : {1,30}", "latitude (rd)", ResultLBR.B));
         Console.WriteLine(String.Format("{0,-30} : {1,30}", "radius (au)", ResultLBR.R));
         Console.WriteLine(String.Format("{0,-30} : {1,30}", "longitude velocity (rd/day)", ResultLBR.dL));
@@ -143,7 +138,7 @@ void PerformanceTest(int cycle)
                     //FormattedPrint(results);
                 }
             }
-            lock(lockobject)
+            lock (lockobject)
             {
                 completedCycle++;
                 if (completedCycle % 1000 == 0)
@@ -181,5 +176,3 @@ void PerformanceTestSingle(int cycle)
     Console.WriteLine($"Performance Test Finished.");
     Console.WriteLine($"Time Used: {sw.Elapsed.TotalMilliseconds,10} ms");
 }
-
-

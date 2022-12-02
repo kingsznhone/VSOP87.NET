@@ -15,22 +15,26 @@
         /// <summary>
         /// UTC:Coordinated Universal Time
         /// </summary>
-        public DateTime UTC { get { return _dt; } }
+        public DateTime UTC
+        { get { return _dt; } }
 
         /// <summary>
         /// TAI:International Atomic Time
         /// </summary>
-        public DateTime TAI { get { return ChangeFrame(_dt, TimeFrame.TAI); } }
+        public DateTime TAI
+        { get { return ChangeFrame(_dt, TimeFrame.TAI); } }
 
         /// <summary>
         /// TT :Terrestrial Time (aka. TDT)
         /// </summary>
-        public DateTime TT { get { return ChangeFrame(_dt, TimeFrame.TT); } }
+        public DateTime TT
+        { get { return ChangeFrame(_dt, TimeFrame.TT); } }
 
         /// <summary>
         /// TDB:Barycentric Dynamical Time
         /// </summary>
-        public DateTime TDB { get { return ChangeFrame(_dt, TimeFrame.TDB); } }
+        public DateTime TDB
+        { get { return ChangeFrame(_dt, TimeFrame.TDB); } }
 
         private List<Func<DateTime, DateTime>> UpGradeFuncs;
         private List<Func<DateTime, DateTime>> DownGradeFuncs;
@@ -48,11 +52,10 @@
 
             DownGradeFuncs = new List<Func<DateTime, DateTime>>(
                 new Func<DateTime, DateTime>[] { TAItoUTC, TTtoTAI, TDBtoTT });
-
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="dt">DateTime in UTC Frame</param>
         /// <param name="TargetFrame"></param>
@@ -76,7 +79,6 @@
             return dt;
         }
 
-
         #region UTC To TDB
 
         public static DateTime UTCtoTAI(DateTime UTC)
@@ -94,9 +96,11 @@
             //Error btw TT&TDB is so small that can be ignored.
             return TT;
         }
-        #endregion
+
+        #endregion UTC To TDB
 
         #region TDB to UTC
+
         public static DateTime TDBtoTT(DateTime TDB)
         {
             return TDB;
@@ -112,12 +116,12 @@
             return TAI.AddSeconds(-37);
         }
 
-        #endregion
+        #endregion TDB to UTC
 
         #region JulianDate Convert
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="dt">Barycentric Dynamical Time</param>
         /// <returns>JulianDate in double</returns>
@@ -127,7 +131,7 @@
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="JD"></param>
         /// <returns>Datetime in TDB Frame</returns>
@@ -135,7 +139,7 @@
         {
             return DateTime.FromOADate(JD - 2415018.5);
         }
-        #endregion
 
+        #endregion JulianDate Convert
     }
 }

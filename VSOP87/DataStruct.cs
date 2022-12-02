@@ -32,7 +32,6 @@ namespace VSOP87
     [Serializable]
     public enum VSOPVersion
     {
-
         // 0: VSOP87 (initial solution).
         //    elliptic coordinates
         //    dynamical equinox and ecliptic J2000.
@@ -56,7 +55,6 @@ namespace VSOP87
         //    rectangular coordinates
         //    barycentric positions and velocities
         //    dynamical equinox and ecliptic J2000.
-
 
         /// <summary>
         /// Elliptic coordinates J2000
@@ -87,11 +85,6 @@ namespace VSOP87
         /// Barycentric  rectangular coordinates J2000
         /// </summary>
         VSOP87E = 5,
-    }
-
-    public enum VSOPDATAEXT
-    {
-
     }
 
     [Serializable]
@@ -134,18 +127,21 @@ namespace VSOP87
         /// number of body
         /// </summary>
         public VSOPBody body;
+
         /// <summary>
         /// index of coordinate
         /// </summary>
         public int ic;
+
         /// <summary>
-        /// degree alpha of time variable T 
+        /// degree alpha of time variable T
         /// </summary>
         public int it;
+
         /// <summary>
         /// number of terms of series
         /// </summary>
-        public int nt; 
+        public int nt;
     }
 
     [Serializable]
@@ -157,21 +153,23 @@ namespace VSOP87
         /// </summary>
         [FieldOffset(0)]
         public long rank;
+
         /// <summary>
         /// amplitude A
         /// </summary>
         [FieldOffset(8)]
         public double A;
+
         /// <summary>
-        /// phase     B 
+        /// phase     B
         /// </summary>
         [FieldOffset(16)]
         public double B;
+
         /// <summary>
         /// frequency C
         /// </summary>
         [FieldOffset(24)]
-        public double C; 
+        public double C;
     }
-
 }

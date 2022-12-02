@@ -10,21 +10,20 @@ namespace VSOP87
 
         public TimeSpan TimeUsed;
 
-        Stopwatch sw;
+        private Stopwatch sw;
 
         public Calculator()
         {
             sw = new Stopwatch();
             TimeUsed = new TimeSpan(0);
-            var debug = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-            using (Stream ms =Assembly.GetExecutingAssembly().GetManifestResourceStream("VSOP87.Resources.VSOP87DATA.BIN"))
+            using (Stream ms = Assembly.GetExecutingAssembly().GetManifestResourceStream("VSOP87.Resources.VSOP87DATA.BIN"))
             {
                 VSOP87DATA = (List<PlanetTable>)new BinaryFormatter().Deserialize(ms);
             }
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="ibody">VSOP87 Planet</param>
         /// <param name="iver">VSOP87 Version</param>
@@ -43,10 +42,13 @@ namespace VSOP87
                 {
                     case VSOPVersion.VSOP87:
                         return new VSOPResultELL(iver, ibody, time, result);
+
                     case VSOPVersion.VSOP87A or VSOPVersion.VSOP87C or VSOPVersion.VSOP87E:
                         return new VSOPResultXYZ(iver, ibody, time, result);
+
                     case VSOPVersion.VSOP87B or VSOPVersion.VSOP87D:
                         return new VSOPResultLBR(iver, ibody, time, result);
+
                     default: throw new ArgumentException();
                 }
             }
@@ -57,7 +59,7 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="Planet">Dataset of a planet</param>
         /// <param name="JD">Julian Date</param>
@@ -81,13 +83,13 @@ namespace VSOP87
                 for (int it = 5; it >= 0; it--)
                 {
                     tit = t[it];
-                    if (Planet.variables[iv].PowerTables == null) continue;
-                    if (Planet.variables[iv].PowerTables[it].Terms == null) continue;
+                    if (Planet.variables[iv].PowerTables is null) continue;
+                    if (Planet.variables[iv].PowerTables[it].Terms is null) continue;
                     foreach (Term term in Planet.variables[iv].PowerTables[it].Terms)
                     {
                         u = term.B + term.C * phi;
                         (su, cu) = Math.SinCos(u);
-                        Result[iv] += term.A * cu * tit;
+                        Result[iv] = Result[iv] + term.A * cu * tit;
 
                         // Original resolution specification.
                         if (Planet.version == VSOPVersion.VSOP87) continue;
@@ -111,7 +113,7 @@ namespace VSOP87
             //Modulo Spherical longitude L into [0,2*pi)
             if (Utility.GetCoordinatesType(Planet.version) == CoordinatesType.Spherical)
             {
-                Result[0] = ModuloCircle(Result[0]);
+                ModuloCircle(ref Result[0]);
             }
 
             sw.Stop();
@@ -119,13 +121,11 @@ namespace VSOP87
             return Result;
         }
 
-
-        private double ModuloCircle(double RAD)
+        private void ModuloCircle(ref double RAD)
         {
             RAD -= Math.Floor(RAD / 2 / Math.PI) * 2 * Math.PI;
             if (RAD < 0)
                 RAD += 2 * Math.PI;
-            return RAD;
         }
     }
 }

@@ -9,7 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VSOP87\VSOP87.csproj" />
+    <ProjectReference Include="..\VSOP87\VSOP87.csproj">
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>
