@@ -3,6 +3,7 @@ using System.Diagnostics;
 using VSOP87;
 
 Calculator vsop = new Calculator();
+CalculatorF vsopF = new CalculatorF();
 //PlanetTable SelectedPlanet = vsop.VSOP87DATA.Where(x => x.ibody == SelectedBody).Where(x => x.iver == SelectedVersion).First();
 
 DateTime Tinput = DateTime.Now;
@@ -22,10 +23,13 @@ foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
     }
 }
 
-Console.Write("Press Enter To Start Performance Test...");
+Console.Write("Press Enter To Start 64bit Performance Test...");
 Console.ReadLine();
 PerformanceTest(10000);
 
+Console.Write("Press Enter To Start 32bit Performance Test...");
+Console.ReadLine();
+PerformanceTestF(10000);
 //PerformanceTestSingle(10000);
 
 Console.Write("Press Enter To Exit...");
@@ -121,7 +125,7 @@ double ModuloCircle(double RAD)
 
 void PerformanceTest(int cycle)
 {
-    Console.WriteLine("=====================Start Performance Test=====================");
+    Console.WriteLine("=====================Start Performance Test 64bit=====================");
     Stopwatch sw = new Stopwatch();
     sw.Start();
     object lockobject = new object();
@@ -150,29 +154,41 @@ void PerformanceTest(int cycle)
     });
 
     sw.Stop();
-    Console.WriteLine($"Performance Test Finished.");
+    Console.WriteLine($"Performance Test 64bit Finished.");
     Console.WriteLine($"Time Used: {sw.Elapsed.TotalMilliseconds,10} ms");
 }
 
-void PerformanceTestSingle(int cycle)
+void PerformanceTestF(int cycle)
 {
-    Console.WriteLine("=====================Start Performance Test=====================");
+    Console.WriteLine("=====================Start Performance Test 32bit=====================");
     Stopwatch sw = new Stopwatch();
     sw.Start();
-    object lockobject = new();
+    object lockobject = new object();
     int completedCycle = 0;
-    while (completedCycle < cycle)
+    var result = Parallel.For(0, cycle, (i) =>
     {
-        foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
         {
-            foreach (VSOPBody ib in Utility.AvailableBody(iv))
+            foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
             {
-                vsop.GetPlanet(ib, iv, vTime);
+                foreach (VSOPBody ib in Utility.AvailableBody(iv))
+                {
+                    vsopF.GetPlanet(ib, iv, vTime);
+                    //Console.WriteLine($"Time Used: {vsop.TimeUsed.TotalMilliseconds} ms");
+                    //FormattedPrint(results);
+                }
+            }
+            lock (lockobject)
+            {
                 completedCycle++;
+                if (completedCycle % 1000 == 0)
+                {
+                    Console.WriteLine($"Cycle: {completedCycle,-10}  {sw.Elapsed.TotalMilliseconds,10} ms");
+                }
             }
         }
-    }
+    });
+
     sw.Stop();
-    Console.WriteLine($"Performance Test Finished.");
+    Console.WriteLine($"Performance Test 32bit Finished.");
     Console.WriteLine($"Time Used: {sw.Elapsed.TotalMilliseconds,10} ms");
 }

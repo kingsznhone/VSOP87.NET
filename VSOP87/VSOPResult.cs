@@ -19,6 +19,8 @@
         EclipticOfDate = 1
     }
 
+    #region Double
+
     public abstract class VSOPResult
     {
         public abstract VSOPVersion Version { get; }
@@ -218,4 +220,210 @@
         public double dR
         { get { return Variables[5]; } }
     }
+
+    #endregion Double
+
+    #region Float
+
+    public abstract class VSOPResultF
+    {
+        public abstract VSOPVersion Version { get; }
+        public abstract VSOPBody Body { get; }
+        public abstract CoordinatesRefrence CoordinatesRefrence { get; }
+        public abstract CoordinatesType CoordinatesType { get; }
+        public abstract ReferenceFrame ReferenceFrame { get; }
+        public abstract VSOPTime Time { get; }
+        public abstract float[] Variables { get; set; }
+    }
+
+    public class VSOPResultFELL : VSOPResultF
+    {
+        public override VSOPVersion Version { get; }
+        public override VSOPBody Body { get; }
+
+        public override CoordinatesRefrence CoordinatesRefrence
+        { get { return Utility.GetCoordinatesRefrence(Version); } }
+
+        public override CoordinatesType CoordinatesType
+        { get { return Utility.GetCoordinatesType(Version); } }
+
+        public override ReferenceFrame ReferenceFrame
+        { get { return Utility.GetFrameRefrence(Version); } }
+
+        public override VSOPTime Time { get; }
+        public override float[] Variables { get; set; }
+
+        public VSOPResultFELL(VSOPVersion version, VSOPBody body, VSOPTime time, float[] variables)
+        {
+            Version = version;
+            Body = body;
+            Time = time;
+            Variables = variables;
+        }
+
+        /// <summary>
+        /// a = semi-major axis (au)
+        /// </summary>
+        public float a
+        { get { return Variables[0]; } }
+
+        /// <summary>
+        /// lambda = mean longitude (rd)
+        /// </summary>
+        public float l
+        { get { return Variables[1]; } }
+
+        /// <summary>
+        /// k = e*cos(pi) (rd)
+        /// </summary>
+        public float k
+        { get { return Variables[2]; } }
+
+        /// <summary>
+        /// h = e*sin(pi) (rd)
+        /// </summary>
+        public float h
+        { get { return Variables[3]; } }
+
+        /// <summary>
+        /// q = sin(i/2)*cos(omega) (rd)
+        /// </summary>
+        public float q
+        { get { return Variables[4]; } }
+
+        /// <summary>
+        /// p = sin(i/2)*sin(omega) (rd)
+        /// </summary>
+        public float p
+        { get { return Variables[5]; } }
+    }
+
+    public class VSOPResultFXYZ : VSOPResultF
+    {
+        public override VSOPVersion Version { get; }
+        public override VSOPBody Body { get; }
+
+        public override CoordinatesRefrence CoordinatesRefrence
+        { get { return Utility.GetCoordinatesRefrence(Version); } }
+
+        public override CoordinatesType CoordinatesType
+        { get { return Utility.GetCoordinatesType(Version); } }
+
+        public override ReferenceFrame ReferenceFrame
+        { get { return Utility.GetFrameRefrence(Version); } }
+
+        public override VSOPTime Time { get; }
+        public override float[] Variables { get; set; }
+
+        public VSOPResultFXYZ(VSOPVersion version, VSOPBody body, VSOPTime time, float[] variables)
+        {
+            Version = version;
+            Body = body;
+            Time = time;
+            Variables = variables;
+        }
+
+        /// <summary>
+        /// position x (au)
+        /// </summary>
+        public float x
+        { get { return Variables[0]; } }
+
+        /// <summary>
+        /// position y (au)
+        /// </summary>
+        public float y
+        { get { return Variables[1]; } }
+
+        /// <summary>
+        /// position z (au)
+        /// </summary>
+        public float z
+        { get { return Variables[2]; } }
+
+        /// <summary>
+        /// velocity x (au/day)
+        /// </summary>
+        public float dx
+        { get { return Variables[3]; } }
+
+        /// <summary>
+        /// velocity y (au/day)
+        /// </summary>
+        public float dy
+        { get { return Variables[4]; } }
+
+        /// <summary>
+        /// velocity z (au/day)
+        /// </summary>
+        public float dz
+        { get { return Variables[5]; } }
+    }
+
+    public class VSOPResultFLBR : VSOPResultF
+    {
+        public override VSOPVersion Version { get; }
+        public override VSOPBody Body { get; }
+
+        public override CoordinatesRefrence CoordinatesRefrence
+        { get { return Utility.GetCoordinatesRefrence(Version); } }
+
+        public override CoordinatesType CoordinatesType
+        { get { return Utility.GetCoordinatesType(Version); } }
+
+        public override ReferenceFrame ReferenceFrame
+        { get { return Utility.GetFrameRefrence(Version); } }
+
+        public override VSOPTime Time { get; }
+        public override float[] Variables { get; set; }
+
+        public VSOPResultFLBR(VSOPVersion version, VSOPBody body, VSOPTime time, float[] variables)
+        {
+            Version = version;
+
+            Body = body;
+
+            Time = time;
+
+            Variables = variables;
+        }
+
+        /// <summary>
+        /// longitude (rd)
+        /// </summary>
+        public float L
+        { get { return Variables[0]; } }
+
+        /// <summary>
+        /// latitude (rd)
+        /// </summary>
+        public float B
+        { get { return Variables[1]; } }
+
+        /// <summary>
+        /// radius (au)
+        /// </summary>
+        public float R
+        { get { return Variables[2]; } }
+
+        /// <summary>
+        /// longitude velocity (rd/day)
+        /// </summary>
+        public float dL
+        { get { return Variables[3]; } }
+
+        /// <summary>
+        /// latitude velocity (rd/day)
+        /// </summary>
+        public float dB
+        { get { return Variables[4]; } }
+
+        /// <summary>
+        /// radius velocity (au/day)
+        /// </summary>
+        public float dR
+        { get { return Variables[5]; } }
+    }
+
+    #endregion Float
 }

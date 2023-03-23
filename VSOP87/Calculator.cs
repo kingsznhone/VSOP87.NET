@@ -19,6 +19,7 @@ namespace VSOP87
             using (Stream ms = Assembly.GetExecutingAssembly().GetManifestResourceStream("VSOP87.Resources.VSOP87DATA.BIN"))
             {
                 VSOP87DATA = (List<PlanetTable>)new BinaryFormatter().Deserialize(ms);
+                Console.WriteLine("VSOP87DATA.BIN Loaded");
             }
         }
 

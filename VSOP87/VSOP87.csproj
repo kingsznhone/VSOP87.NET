@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +15,7 @@
     <None Remove="Resources\vsop87.f" />
     <None Remove="Resources\vsop87.txt" />
     <None Remove="Resources\VSOP87DATA.BIN" />
+    <None Remove="Resources\VSOP87DATAF.BIN" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +25,7 @@
     <EmbeddedResource Include="Resources\vsop87.f" />
     <EmbeddedResource Include="Resources\vsop87.txt" />
     <EmbeddedResource Include="Resources\VSOP87DATA.BIN" />
+    <EmbeddedResource Include="Resources\VSOP87DATAF.BIN" />
   </ItemGroup>
 
   <ItemGroup>
