@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+	  <VersionPrefix>1.0.3</VersionPrefix>
+	  <Authors>KingsZNHONE</Authors>
+	  <Description>VSOP was developed and is maintained (updated with the latest data) by the scientists at the Bureau des Longitudes in Paris.
+VSOP87, computed the positions of the planets directly at any moment, as well as their orbital elements with improved accuracy.</Description>
+	  <RepositoryUrl></RepositoryUrl>
+	  <RepositoryType>git</RepositoryType>
+	  <PackageProjectUrl>https://github.com/kingsznhone/VSOP87.NET</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\example.f" />
+    <None Remove="Resources\ReadMe" />
+    <None Remove="Resources\vsop87.chk" />
+    <None Remove="Resources\vsop87.f" />
+    <None Remove="Resources\vsop87.txt" />
+    <None Remove="Resources\VSOP87DATA.BIN" />
+    <None Remove="Resources\VSOP87DATAF.BIN" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\example.f" />
+    <EmbeddedResource Include="Resources\ReadMe" />
+    <EmbeddedResource Include="Resources\vsop87.chk" />
+    <EmbeddedResource Include="Resources\vsop87.f" />
+    <EmbeddedResource Include="Resources\vsop87.txt" />
+    <EmbeddedResource Include="Resources\VSOP87DATA.BIN" />
+    <EmbeddedResource Include="Resources\VSOP87DATAF.BIN" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+</Project>

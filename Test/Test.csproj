@@ -5,13 +5,11 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VSOP87\VSOP87.csproj">
-      <Private>True</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\VSOP87.NET\VSOP87.NET.csproj" />
   </ItemGroup>
 
 </Project>

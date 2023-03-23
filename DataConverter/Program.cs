@@ -13,6 +13,7 @@ namespace VSOP87
 
             //List to Serialize
             List<PlanetTable> VSOP87DATA = new List<PlanetTable>();
+            List<PlanetTableF> VSOP87DATAF = new List<PlanetTableF>();
 
             string[] ResourceFiles = Assembly.GetExecutingAssembly().GetManifestResourceNames();
 
@@ -20,12 +21,14 @@ namespace VSOP87
             {
                 Console.WriteLine(file);
                 VSOP87DATA.Add(ReadPlanet(file));
+                VSOP87DATAF.Add(ReadPlanetF(file));
             }
 
             //Dump
 
             DirectoryInfo OutputDir = new DirectoryInfo(Directory.GetCurrentDirectory());
             DumpData(OutputDir, VSOP87DATA);
+            DumpDataF(OutputDir, VSOP87DATAF);
 
             Console.ReadLine();
         }
@@ -82,6 +85,58 @@ namespace VSOP87
 
             return planetdata;
         }
+        private static PlanetTableF ReadPlanetF(string file)
+        {
+            string[] Extensions = { @"sun", @"mer", @"ven", @"ear", @"mar", @"jup", @"sat", @"ura", @"nep", @"emb" };
+
+            //parse filepath
+
+            VSOPVersion iver = (VSOPVersion)Enum.Parse(typeof(VSOPVersion), file.Split(".")[2]);
+            VSOPBody ibody = (VSOPBody)Extensions.ToList().IndexOf(file.Split(".")[3]);
+
+            //create an empty dataset
+            PlanetTableF planetdata = new PlanetTableF();
+            planetdata.version = iver;
+            planetdata.body = ibody;
+            planetdata.variables = new VariableTableF[6];
+            for (int ic = 0; ic < 6; ic++)
+            {
+                planetdata.variables[ic].PowerTables = new PowerTableF[6];
+            }
+
+            Header H;
+            string line;
+            using (Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream(file))
+            {
+                using (StreamReader sr = new StreamReader(s))
+                {
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        H = ReadHeader(line);
+                        planetdata.variables[H.ic].version = H.Version;
+                        planetdata.variables[H.ic].body = H.body;
+                        planetdata.variables[H.ic].ic = H.ic;
+
+                        planetdata.variables[H.ic].PowerTables[H.it].version = H.Version;
+                        planetdata.variables[H.ic].PowerTables[H.it].body = H.body;
+                        planetdata.variables[H.ic].PowerTables[H.it].ic = H.ic;
+                        planetdata.variables[H.ic].PowerTables[H.it].it = H.it;
+                        planetdata.variables[H.ic].PowerTables[H.it].header = H;
+                        planetdata.variables[H.ic].PowerTables[H.it].Terms = new TermF[H.nt];
+
+                        for (int i = 0; i < H.nt; i++)
+                        {
+                            line = sr.ReadLine();
+                            ReadTermF(line, ref planetdata.variables[H.ic].PowerTables[H.it].Terms[i]);
+                        }
+                    }
+                }
+            }
+            Console.WriteLine("Load OK");
+            Console.WriteLine();
+
+            return planetdata;
+        }
 
         private static Header ReadHeader(string line)
         {
@@ -120,14 +175,43 @@ namespace VSOP87
 
             T.C = Convert.ToDouble(line.Substring(lineptr, 20).Trim());
         }
+        private static void ReadTermF(string line, ref TermF T)
+        {
+            int lineptr;
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="dir"></param>
+            lineptr = 5;
+            T.rank = Convert.ToInt32(line.Substring(lineptr, 5));
+            lineptr += 5 + 69;
+
+            T.A = Convert.ToSingle(line.Substring(lineptr, 18).Trim());
+            lineptr += 18;
+
+            T.B = Convert.ToSingle(line.Substring(lineptr, 14).Trim());
+            lineptr += 14;
+
+            T.C = Convert.ToSingle(line.Substring(lineptr, 20).Trim());
+        }
+
         private static void DumpData(DirectoryInfo dir, List<PlanetTable> VSOP87DATA)
         {
             string filename = Path.Combine(dir.FullName, "VSOP87DATA.BIN");
+            if (File.Exists(filename))
+            {
+                File.Delete(filename);
+            }
+
+            using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(fs, VSOP87DATA);
+            }
+
+            Console.WriteLine(filename + Environment.NewLine + "Dump OK");
+            Console.WriteLine();
+        }
+        private static void DumpDataF(DirectoryInfo dir, List<PlanetTableF> VSOP87DATA)
+        {
+            string filename = Path.Combine(dir.FullName, "VSOP87DATAF.BIN");
             if (File.Exists(filename))
             {
                 File.Delete(filename);
