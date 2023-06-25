@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\VSOP87.NET\VSOP87.NET.csproj" />
   </ItemGroup>
 

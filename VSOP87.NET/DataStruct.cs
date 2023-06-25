@@ -130,6 +130,10 @@ namespace VSOP87
         public int it;
         public Header header;
         public Term[] Terms;
+
+        public double[] Array_A;
+        public double[] Array_B;
+        public double[] Array_C;
     }
 
     [Serializable]
@@ -141,6 +145,10 @@ namespace VSOP87
         public int it;
         public Header header;
         public TermF[] Terms;
+
+        public float[] Array_A;
+        public float[] Array_B;
+        public float[] Array_C;
     }
 
     [Serializable]
