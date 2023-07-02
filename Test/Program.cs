@@ -3,8 +3,46 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using VSOP87;
+
+
+
+Random random = new Random();
+double[] array_double = new double[1024];
+ref double ref_double = ref MemoryMarshal.GetReference<double>(array_double);
+for (int i = 0; i < array_double.Length; i++)
+{
+    array_double[i] = random.NextDouble();
+}
+double sum = array_double.Sum();
+double sum2;
+Vector256<double> vsum = new Vector256<double>();
+nuint vectorSize = (nuint)Vector256<double>.Count;
+nuint Offset = 0;
+
+double dv1 = 0;
+double dsum = 0;
+double diff = 0;
+for (Offset = 0; Offset <(nuint) array_double.Length; Offset += vectorSize)
+{
+    var v1 = Vector256.LoadUnsafe(ref ref_double, Offset);
+    dsum = Vector256.Sum(vsum);
+    vsum += v1;
+    dsum = Vector256.Sum(vsum) - dsum;
+    dv1 = Vector256.Sum(v1);
+    diff += dsum - dv1;
+    //Debug.Assert(dsum == dv1);
+}
+sum2 = Vector256.Sum(vsum);
+
+//Debug.Assert(sum2 == sum);
+
+
+bool hwaccel = Vector256.IsHardwareAccelerated;
 
 Calculator vsop = new Calculator();
 CalculatorF vsopF = new CalculatorF();
@@ -16,38 +54,55 @@ DateTimeStyles style = DateTimeStyles.AdjustToUniversal;
 DateTime.TryParse(inputT, culture, style, out Tinput);
 VSOPTime vTime = new VSOPTime(Tinput);
 
-var results = vsop.GetPlanet(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
+var results = vsop.GetPlanet(VSOPBody.MERCURY, VSOPVersion.VSOP87D, vTime);
 FormattedPrint(results);
 
-results = vsop.GetPlanet_SIMD(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
+results = vsop.GetPlanet_SIMD(VSOPBody.MERCURY, VSOPVersion.VSOP87D, vTime);
 FormattedPrint(results);
 
-//var summary = BenchmarkRunner.Run<CalculatorF>();
+var summary = BenchmarkRunner.Run<Calculator>();
+var summaryF = BenchmarkRunner.Run<CalculatorF>();
 Console.ReadLine();
 
 Stopwatch sw = new Stopwatch();
 
 vsop.preset();
+vsopF.preset();
 double[] testResult;
-sw.Start();
-for (int i = 0; i < 100; i++)
-{
-    testResult = vsop.Test_Legacy();
-}
-    
+float[] testResultF;
 
-sw.Stop();
+//sw.Restart();
+//for (int i = 0; i < 500; i++)
+//{
+//    testResult = vsop.Test_Legacy();
+//}
+//sw.Stop();
+//Console.WriteLine($"Legacy runtime: {sw.ElapsedMilliseconds} ms");
+
+//sw.Restart();
+//for (int i = 0; i < 500; i++)
+//{
+//    testResult = vsop.Test_SIMD();
+//}
+//sw.Stop();
+//Console.WriteLine($"SIMD runtime: {sw.ElapsedMilliseconds} ms");
+
+//sw.Restart();
+//for (int i = 0; i < 500; i++)
+//{
+//    testResultF = vsopF.Test_Legacy();
+//}
+//sw.Stop();
+//Console.WriteLine($"Legacy runtime: {sw.ElapsedMilliseconds} ms");
 
 
-Console.WriteLine($"Legacy runtime: {sw.ElapsedMilliseconds} ms");
-
-sw.Restart();
-for (int i = 0; i < 100; i++)
-{
-    testResult = vsop.Test_SIMD();
-}
-sw.Stop();
-Console.WriteLine($"SIMD runtime: {sw.ElapsedMilliseconds} ms");
+//sw.Restart();
+//for (int i = 0; i < 500; i++)
+//{
+//    testResultF = vsopF.Test_SIMD();
+//}
+//sw.Stop();
+//Console.WriteLine($"SIMDF runtime: {sw.ElapsedMilliseconds} ms");
 
 
 
@@ -57,9 +112,10 @@ Console.WriteLine($"SIMD runtime: {sw.ElapsedMilliseconds} ms");
 //{
 //    foreach (VSOPBody ib in Utility.AvailableBody(iv))
 //    {
-//        var results = vsop.GetPlanet(ib, iv, vTime);
+//        results = vsop.GetPlanet(ib, iv, vTime);
 //        FormattedPrint(results);
-//        Console.WriteLine($"Time Used: {vsop.TimeUsed.TotalMilliseconds} ms");
+//        results = vsop.GetPlanet_SIMD(ib, iv, vTime);
+//        FormattedPrint(results);
 //        Console.WriteLine();
 //    }
 //}

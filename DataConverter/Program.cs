@@ -203,7 +203,9 @@ namespace VSOP87
             using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
             {
                 BinaryFormatter bf = new BinaryFormatter();
+#pragma warning disable SYSLIB0011 // 类型或成员已过时
                 bf.Serialize(fs, VSOP87DATA);
+#pragma warning restore SYSLIB0011 // 类型或成员已过时
             }
 
             Console.WriteLine(filename + Environment.NewLine + "Dump OK");
@@ -220,7 +222,9 @@ namespace VSOP87
             using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
             {
                 BinaryFormatter bf = new BinaryFormatter();
+#pragma warning disable SYSLIB0011 // 类型或成员已过时
                 bf.Serialize(fs, VSOP87DATA);
+#pragma warning restore SYSLIB0011 // 类型或成员已过时
             }
 
             Console.WriteLine(filename + Environment.NewLine + "Dump OK");

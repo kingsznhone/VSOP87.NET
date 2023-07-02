@@ -1,9 +1,10 @@
 ﻿using System.Globalization;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Runtime.Serialization.Formatters.Binary;
 using BenchmarkDotNet.Attributes;
-using Microsoft.Diagnostics.Runtime.Utilities;
 
 namespace VSOP87
 {
@@ -11,21 +12,21 @@ namespace VSOP87
     public class Calculator
     {
         public readonly List<PlanetTable> VSOP87DATA;
+        public readonly int vectorSize = Vector256<double>.Count;
 
-        public readonly int vectorSize = Vector<double>.Count;
+        private double[] array_u = new double[2048];
+        private double[] array_cu = new double[2048];
+        private double[] array_su = new double[2048];
+        private double[] array_a_cu_tit = new double[2048];
+        private double[] array_R = new double[2048];
 
-        double[] array_u = new double[2048];
-        double[] array_cu = new double[2048];
-        double[] array_su = new double[2048];
-        double[] array_a_cu_tit = new double[2048];
-        double[] array_a_c_su_tit = new double[2048];
-        double[] array_tit_it_a_cu = new double[2048];
-        double[] array_LR = new double[2048];
         public Calculator()
         {
             using (Stream ms = Assembly.GetExecutingAssembly().GetManifestResourceStream("VSOP87.NET.Resources.VSOP87DATA.BIN"))
             {
+#pragma warning disable SYSLIB0011 // 类型或成员已过时
                 VSOP87DATA = (List<PlanetTable>)new BinaryFormatter().Deserialize(ms);
+#pragma warning restore SYSLIB0011 // 类型或成员已过时
                 Console.WriteLine("VSOP87DATA.BIN Loaded");
             }
             for (int ip = 0; ip < VSOP87DATA.Count; ip++)
@@ -38,24 +39,18 @@ namespace VSOP87
                         if (VSOP87DATA[ip].variables[iv].PowerTables[it].Terms is null) continue;
 
                         //Prepare SIMD Array
-                        int RawLength = VSOP87DATA[ip].variables[iv].PowerTables[it].Terms.Length;
-                        int REM;
-                        Math.DivRem(RawLength, vectorSize, out REM);
-                        int SIMDLength = RawLength + (vectorSize - REM);
                         var terms = VSOP87DATA[ip].variables[iv].PowerTables[it].Terms;
-
-                        double[] buffer = new Double[SIMDLength];
+                        double[] buffer = new Double[terms.Length];
                         Array.Copy(terms.Select(x => x.A).ToArray(), buffer, terms.Length);
                         VSOP87DATA[ip].variables[iv].PowerTables[it].Array_A = buffer;
 
-                        buffer = new Double[SIMDLength];
+                        buffer = new Double[terms.Length];
                         Array.Copy(terms.Select(x => x.B).ToArray(), buffer, terms.Length);
                         VSOP87DATA[ip].variables[iv].PowerTables[it].Array_B = buffer;
 
-                        buffer = new Double[SIMDLength];
+                        buffer = new Double[terms.Length];
                         Array.Copy(terms.Select(x => x.C).ToArray(), buffer, terms.Length);
                         VSOP87DATA[ip].variables[iv].PowerTables[it].Array_C = buffer;
-
                     }
                 }
             }
@@ -143,13 +138,13 @@ namespace VSOP87
         {
             double phi = (JD - 2451545.0d) / 365250d;
 
-            double[] t = new double[6];
+            Span<double> t = stackalloc double[6];
             for (int i = 0; i < 6; i++)
             {
                 t[i] = Math.Pow(phi, i);
             }
 
-            double[] Result = new double[6];
+            Span<double> Result = stackalloc double[6];
             double u, cu, su;
             double tit;//t[it]
             for (int iv = 0; iv < 6; iv++)
@@ -161,8 +156,10 @@ namespace VSOP87
                     if (Planet.variables[iv].PowerTables[it].Terms is null) continue;
                     foreach (Term term in Planet.variables[iv].PowerTables[it].Terms)
                     {
-                        u = term.B + term.C * phi;
-                        (su, cu) = Math.SinCos(u);
+                        //u = b + c * phi
+                        //su = Math.Sin(u);
+                        //cu= Math.Cos(u);
+                        (su, cu) = Math.SinCos(term.B + term.C * phi);
                         Result[iv] = Result[iv] + term.A * cu * tit;
 
                         // Original resolution specification.
@@ -178,7 +175,7 @@ namespace VSOP87
             }
 
             // Original resolution specification.
-            if (Planet.version == VSOPVersion.VSOP87) return Result;
+            if (Planet.version == VSOPVersion.VSOP87) return Result.ToArray();
             for (int ic = 0; ic < 3; ic++)
             {
                 Result[ic + 3] /= 365250d;
@@ -190,116 +187,171 @@ namespace VSOP87
                 ModuloCircle(ref Result[0]);
             }
 
-            return Result;
+            return Result.ToArray();
         }
 
         private double[] Calculate_SIMD(PlanetTable Planet, double JD)
         {
             double phi = (JD - 2451545.0d) / 365250d;
-            Vector<double> vphi = new Vector<double>(new double[] { phi, phi, phi, phi });
 
-            double[] t = new double[6];
+            Span<double> t = stackalloc double[6];
             for (int i = 0; i < 6; i++)
             {
                 t[i] = Math.Pow(phi, i);
             }
 
-            double[] Result = new double[6];
+            Span<double> Result = stackalloc double[6];
+            Vector256<double> sum = new Vector256<double>();
             double u, cu, su;
-            double tit;//t[it]
+            double tit;// =t[it]
+
+            Span<double> span_u = new Span<double>(array_u);
+            Span<double> span_cu = new Span<double>(array_cu);
+            Span<double> span_su = new Span<double>(array_su);
+            Span<double> span_a_cu_tit = new Span<double>(array_a_cu_tit);
+            Span<double> span_R = new Span<double>(array_R);
+
+            ref double ref_u = ref MemoryMarshal.GetReference<double>(array_u);
+            ref double ref_cu = ref MemoryMarshal.GetReference<double>(array_cu);
+            ref double ref_su = ref MemoryMarshal.GetReference<double>(array_su);
+            ref double ref_a_cu_tit = ref MemoryMarshal.GetReference<double>(array_a_cu_tit);
+            ref double ref_R = ref MemoryMarshal.GetReference<double>(array_R);
+
             for (int iv = 0; iv < 6; iv++)
             {
                 for (int it = 5; it >= 0; it--)
                 {
-                    Vector<double> vit = new Vector<double>(new double[] { it, it, it, it });
                     tit = t[it];
-                    Vector<double> vtit = new Vector<double>(new double[] { tit, tit, tit, tit });
                     if (Planet.variables[iv].PowerTables is null) continue;
                     if (Planet.variables[iv].PowerTables[it].Terms is null) continue;
-
-                    int SIMDLength = Planet.variables[iv].PowerTables[it].Array_A.Length;
-
-                    // u = term.B + term.C * phi;
-                    for (int i = 0; i < SIMDLength; i += vectorSize)
+                    Term[] terms = Planet.variables[iv].PowerTables[it].Terms;
+                    if (terms.Length < (int)vectorSize)
                     {
-                        var vc = new Vector<double>(Planet.variables[iv].PowerTables[it].Array_C, i);
-                        var vb = new Vector<double>(Planet.variables[iv].PowerTables[it].Array_B, i);
-                        ((vc * vphi) + vb).CopyTo(array_u, i);
-                    }
-
-                    //(su, cu) = Math.SinCos(u);
-                    for (int i = 0; i < SIMDLength; i++)
-                    {
-                        (array_su[i], array_cu[i]) = Math.SinCos(array_u[i]);
-                    }
-
-                    //term.A * cu * tit
-                    for (int i = 0; i < SIMDLength; i += vectorSize)
-                    {
-                        var vcu = new Vector<double>(array_cu, i);
-                        var va = new Vector<double>(Planet.variables[iv].PowerTables[it].Array_A, i);
-                        (va * vcu * vtit).CopyTo(array_a_cu_tit, i);
-                    }
-
-                    //Result[iv] += term.A * cu * tit;
-                    for (int i = 0; i < SIMDLength; i += vectorSize)
-                    {
-                        var v1 = new Vector<double>(array_a_cu_tit, i);
-                        Result[iv] += Vector.Sum(v1);
-                    }
-
-                    if (Planet.version == VSOPVersion.VSOP87) continue;
-
-                    //Right= tit * term.A * term.C * su
-                    for (int i = 0; i < SIMDLength; i += vectorSize)
-                    {
-                        var vsu = new Vector<double>(array_su, i);
-                        var va = new Vector<double>(Planet.variables[iv].PowerTables[it].Array_A, i);
-                        var vc = new Vector<double>(Planet.variables[iv].PowerTables[it].Array_C, i);
-                        (-va * vc * vsu * vtit).CopyTo(array_a_c_su_tit, i);
-                    }
-
-                    if (it == 0)
-                    {
-                        for (int i = 0; i < SIMDLength; i += vectorSize)
+                        foreach (Term term in terms)
                         {
-                            var v1 = new Vector<double>(array_a_c_su_tit, i);
-                            Result[iv + 3] += Vector.Sum(v1);
+                            u = term.B + term.C * phi;
+                            (su, cu) = Math.SinCos(u);
+                            Result[iv] = Result[iv] + term.A * cu * tit;
+
+                            // Original resolution specification.
+                            if (Planet.version == VSOPVersion.VSOP87) continue;
+
+                            // Derivative of 3 variables
+                            if (it == 0)
+                                Result[iv + 3] += (0 * it * term.A * cu) - (tit * term.A * term.C * su);
+                            else
+                                Result[iv + 3] += (t[it - 1] * it * term.A * cu) - (tit * term.A * term.C * su);
                         }
                     }
                     else
                     {
-
-                        Vector<double> vtit1 = new Vector<double>(new double[] { t[it - 1], t[it - 1], t[it - 1], t[it - 1] });
-
-                        // LEFT = t[it - 1] * it * term.A * cu
-                        for (int i = 0; i < SIMDLength; i += vectorSize)
+                        Span<double> span_a = new Span<double>(Planet.variables[iv].PowerTables[it].Array_A);
+                        Span<double> span_b = new Span<double>(Planet.variables[iv].PowerTables[it].Array_B);
+                        Span<double> span_c = new Span<double>(Planet.variables[iv].PowerTables[it].Array_C);
+                        ref double ref_a = ref MemoryMarshal.GetReference<double>(Planet.variables[iv].PowerTables[it].Array_A);
+                        ref double ref_b = ref MemoryMarshal.GetReference<double>(Planet.variables[iv].PowerTables[it].Array_B);
+                        ref double ref_c = ref MemoryMarshal.GetReference<double>(Planet.variables[iv].PowerTables[it].Array_C);
+                        int TableSize = terms.Length;
+                        int SIMDLength = (terms.Length - vectorSize);
+                        int Offset = 0;
+                        // u = term.B + term.C * phi;
+                        for (Offset = 0; Offset <= SIMDLength; Offset += vectorSize)
                         {
-                            var va = new Vector<double>(Planet.variables[iv].PowerTables[it].Array_A, i);
-                            var vcu = new Vector<double>(array_cu, i);
-                            
-                            (vtit1 * vit * va * vcu).CopyTo(array_tit_it_a_cu, i);
+                            var vc = Vector256.LoadUnsafe(ref ref_c, (nuint)Offset);
+                            var vb = Vector256.LoadUnsafe(ref ref_b, (nuint)Offset);
+                            ((vc * phi) + vb).StoreUnsafe(ref ref_u, (nuint)Offset);
+                        }
+                        for (; Offset < TableSize; Offset++)
+                        {
+                            span_u[Offset] = (span_c[Offset] * phi) + span_b[Offset];
                         }
 
-                        //left-right
-                        for (int i = 0; i < SIMDLength; i += vectorSize)
+                        //(su, cu) = Math.SinCos(u);
+                        for (Offset = 0; Offset < TableSize; Offset++)
                         {
-                            var v1 = new Vector<double>(array_tit_it_a_cu, i);
-                            var v2 = new Vector<double>(array_a_c_su_tit, i);
-                            (v1 - v2).CopyTo(array_LR, i);
+                            span_su[Offset] = Math.Sin(span_u[Offset]);
+                            span_cu[Offset] = Math.Cos(span_u[Offset]);
                         }
 
-                        for (int i = 0; i < SIMDLength; i += vectorSize)
+                        //term.A * cu * tit
+                        for (Offset = 0; Offset <= SIMDLength; Offset += vectorSize)
                         {
-                            var v1 = new Vector<double>(array_LR, i);
-                            Result[iv + 3] += Vector.Sum(v1);
+                            var vcu = Vector256.LoadUnsafe(ref ref_cu, (nuint)Offset);
+                            var va = Vector256.LoadUnsafe(ref ref_a, (nuint)Offset);
+                            (va * vcu * tit).StoreUnsafe(ref ref_a_cu_tit, (nuint)Offset);
+                        }
+                        for (; Offset < TableSize; Offset++)
+                        {
+                            span_a_cu_tit[Offset] = span_a[Offset] * span_cu[Offset] * tit;
+                        }
+
+                        //Result[iv] += term.A * cu * tit;
+                        sum ^= sum;
+                        for (Offset = 0; Offset <= SIMDLength; Offset += vectorSize)
+                        {
+                            var v1 = Vector256.LoadUnsafe(ref ref_a_cu_tit, (nuint)Offset);
+                            sum += v1;
+                        }
+                        Result[iv] += Vector256.Sum(sum);
+                        for (; Offset < TableSize; Offset++)
+                        {
+                            Result[iv] += span_a_cu_tit[Offset];
+                        }
+
+                        if (Planet.version == VSOPVersion.VSOP87) continue;
+
+                        //Right= tit * term.A * term.C * su
+                        for (Offset = 0; Offset <= SIMDLength; Offset += vectorSize)
+                        {
+                            var vsu = Vector256.LoadUnsafe(ref ref_su, (nuint)Offset);
+                            var va = Vector256.LoadUnsafe(ref ref_a, (nuint)Offset);
+                            var vc = Vector256.LoadUnsafe(ref ref_c, (nuint)Offset);
+                            (va * vc * vsu * tit).StoreUnsafe(ref ref_R, (nuint)Offset);
+                        }
+                        for (; Offset < TableSize; Offset++)
+                        {
+                            span_R[Offset] = span_a[Offset] * span_c[Offset] * span_su[Offset] * tit;
+                        }
+
+                        if (it == 0)
+                        {
+                            sum ^= sum;
+                            for (Offset = 0; Offset <= SIMDLength; Offset += vectorSize)
+                            {
+                                var v1 = Vector256.LoadUnsafe(ref ref_R, (nuint)Offset);
+                                sum += v1;
+                            }
+                            Result[iv + 3] -= Vector256.Sum(sum);
+                            for (; Offset < TableSize; Offset++)
+                            {
+                                Result[iv + 3] -= span_R[Offset];
+                            }
+                        }
+                        else
+                        {
+                            // LEFT = t[it - 1] * it * term.A * cu
+                            sum ^= sum;
+                            for (Offset = 0; Offset <= SIMDLength; Offset += vectorSize)
+                            {
+                                var va = Vector256.LoadUnsafe(ref ref_a, (nuint)Offset);
+                                var vcu = Vector256.LoadUnsafe(ref ref_cu, (nuint)Offset);
+                                var vr = Vector256.LoadUnsafe(ref ref_R, (nuint)Offset);
+                                sum += (t[it - 1] * it * va * vcu - vr);
+                            }
+                            Result[iv + 3] += Vector256.Sum(sum);
+                            for (; Offset < TableSize; Offset++)
+                            {
+                                Result[iv + 3] += t[it - 1] * it * span_a[Offset] * span_cu[Offset] - span_R[Offset];
+                            }
+
+                            //left-right
                         }
                     }
                 }
             }
 
             // Original resolution specification.
-            if (Planet.version == VSOPVersion.VSOP87) return Result;
+            if (Planet.version == VSOPVersion.VSOP87) return Result.ToArray();
             for (int ic = 0; ic < 3; ic++)
             {
                 Result[ic + 3] /= 365250d;
@@ -311,14 +363,13 @@ namespace VSOP87
                 ModuloCircle(ref Result[0]);
             }
 
-            return Result;
+            return Result.ToArray();
         }
 
+        private DateTime Tinput;
+        private VSOPTime vTime;
+        private int tableIndex;
 
-
-        DateTime Tinput;
-        VSOPTime vTime;
-        int tableIndex;
         [GlobalSetup]
         public void preset()
         {
@@ -330,36 +381,19 @@ namespace VSOP87
         [Benchmark]
         public double[] Test_Legacy()
         {
-            double[] results = new double[6];
-            foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
-            {
-                foreach (VSOPBody ib in Utility.AvailableBody(iv))
-                {
-                    tableIndex = VSOP87DATA.FindIndex(x => x.version == iv && x.body == ib);
-                    results = Calculate(VSOP87DATA[tableIndex], VSOPTime.ToJulianDate(vTime.TDB));
-                }
-            }
+            var results = Calculate(VSOP87DATA[tableIndex], VSOPTime.ToJulianDate(vTime.TDB));
             return results;
         }
 
         [Benchmark]
         public double[] Test_SIMD()
         {
-            double[] results = new double[6];
-            foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
-            {
-                foreach (VSOPBody ib in Utility.AvailableBody(iv))
-                {
-                    tableIndex = VSOP87DATA.FindIndex(x => x.version == iv && x.body == ib);
-                    results = Calculate_SIMD(VSOP87DATA[tableIndex], VSOPTime.ToJulianDate(vTime.TDB));
-                }
-            }
+            var results = Calculate_SIMD(VSOP87DATA[tableIndex], VSOPTime.ToJulianDate(vTime.TDB));
             return results;
         }
 
         private void ModuloCircle(ref double RAD)
         {
-
             RAD -= Math.Floor(RAD / 2 / Math.PI) * 2 * Math.PI;
             if (RAD < 0)
                 RAD += 2 * Math.PI;
