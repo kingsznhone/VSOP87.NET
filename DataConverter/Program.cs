@@ -85,6 +85,7 @@ namespace VSOP87
 
             return planetdata;
         }
+
         private static PlanetTableF ReadPlanetF(string file)
         {
             string[] Extensions = { @"sun", @"mer", @"ven", @"ear", @"mar", @"jup", @"sat", @"ura", @"nep", @"emb" };
@@ -175,6 +176,7 @@ namespace VSOP87
 
             T.C = Convert.ToDouble(line.Substring(lineptr, 20).Trim());
         }
+
         private static void ReadTermF(string line, ref TermF T)
         {
             int lineptr;
@@ -203,12 +205,15 @@ namespace VSOP87
             using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
             {
                 BinaryFormatter bf = new BinaryFormatter();
+#pragma warning disable SYSLIB0011 
                 bf.Serialize(fs, VSOP87DATA);
+#pragma warning restore SYSLIB0011 
             }
 
             Console.WriteLine(filename + Environment.NewLine + "Dump OK");
             Console.WriteLine();
         }
+
         private static void DumpDataF(DirectoryInfo dir, List<PlanetTableF> VSOP87DATA)
         {
             string filename = Path.Combine(dir.FullName, "VSOP87DATAF.BIN");
@@ -220,7 +225,9 @@ namespace VSOP87
             using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
             {
                 BinaryFormatter bf = new BinaryFormatter();
+#pragma warning disable SYSLIB0011 
                 bf.Serialize(fs, VSOP87DATA);
+#pragma warning restore SYSLIB0011 
             }
 
             Console.WriteLine(filename + Environment.NewLine + "Dump OK");

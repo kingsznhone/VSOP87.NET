@@ -15,26 +15,22 @@
         /// <summary>
         /// UTC:Coordinated Universal Time
         /// </summary>
-        public DateTime UTC
-        { get { return _dt; } }
+        public DateTime UTC => _dt;
 
         /// <summary>
         /// TAI:International Atomic Time
         /// </summary>
-        public DateTime TAI
-        { get { return ChangeFrame(_dt, TimeFrame.TAI); } }
+        public DateTime TAI => ChangeFrame(_dt,TimeFrame.UTC, TimeFrame.TAI);
 
         /// <summary>
         /// TT :Terrestrial Time (aka. TDT)
         /// </summary>
-        public DateTime TT
-        { get { return ChangeFrame(_dt, TimeFrame.TT); } }
+        public DateTime TT => ChangeFrame(_dt, TimeFrame.UTC, TimeFrame.TT);
 
         /// <summary>
         /// TDB:Barycentric Dynamical Time
         /// </summary>
-        public DateTime TDB
-        { get { return ChangeFrame(_dt, TimeFrame.TDB); } }
+        public DateTime TDB => ChangeFrame(_dt, TimeFrame.UTC, TimeFrame.TDB);
 
         private List<Func<DateTime, DateTime>> UpGradeFuncs;
         private List<Func<DateTime, DateTime>> DownGradeFuncs;
@@ -60,20 +56,19 @@
         /// <param name="dt">DateTime in UTC Frame</param>
         /// <param name="TargetFrame"></param>
         /// <returns></returns>
-        public DateTime ChangeFrame(DateTime dt, TimeFrame TargetFrame)
+        public DateTime ChangeFrame(DateTime dt,TimeFrame SourceFrame, TimeFrame TargetFrame)
         {
-            var buffer = TimeFrame.UTC;
-            while (buffer != TargetFrame)
+            while (SourceFrame != TargetFrame)
             {
-                if (TargetFrame > buffer)
+                if (TargetFrame > SourceFrame)
                 {
-                    dt = UpGradeFuncs[(int)buffer](dt);
-                    buffer += 1;
+                    dt = UpGradeFuncs[(int)SourceFrame](dt);
+                    SourceFrame += 1;
                 }
-                else if (TargetFrame < buffer)
+                else if (TargetFrame < SourceFrame)
                 {
-                    dt = DownGradeFuncs[(int)buffer - 1](dt);
-                    buffer -= 1;
+                    dt = DownGradeFuncs[(int)SourceFrame - 1](dt);
+                    SourceFrame -= 1;
                 }
             }
             return dt;
@@ -81,42 +76,42 @@
 
         #region UTC To TDB
 
-        public static DateTime UTCtoTAI(DateTime UTC)
+        private static DateTime UTCtoTAI(DateTime UTC)
         {
             return UTC.AddSeconds(37);
         }
 
-        public static DateTime TAItoTT(DateTime TAI)
+        private static DateTime TAItoTT(DateTime TAI)
         {
             return TAI.AddSeconds(32.184);
         }
 
-        public static DateTime TTtoTDB(DateTime TT)
+        private static DateTime TTtoTDB(DateTime TT)
         {
             //Error btw TT&TDB is so small that can be ignored.
             return TT;
         }
 
-        #endregion UTC To TDB
+        #endregion 
 
         #region TDB to UTC
 
-        public static DateTime TDBtoTT(DateTime TDB)
+        private static DateTime TDBtoTT(DateTime TDB)
         {
             return TDB;
         }
 
-        public static DateTime TTtoTAI(DateTime TT)
+        private static DateTime TTtoTAI(DateTime TT)
         {
             return TT.AddSeconds(-32.184);
         }
 
-        public static DateTime TAItoUTC(DateTime TAI)
+        private static DateTime TAItoUTC(DateTime TAI)
         {
             return TAI.AddSeconds(-37);
         }
 
-        #endregion TDB to UTC
+        #endregion 
 
         #region JulianDate Convert
 
@@ -140,6 +135,6 @@
             return DateTime.FromOADate(JD - 2415018.5);
         }
 
-        #endregion JulianDate Convert
+        #endregion 
     }
 }
