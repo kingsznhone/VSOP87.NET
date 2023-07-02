@@ -2,14 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VSOP87.NET\VSOP87.NET.csproj" />
+    <Reference Include="VSOP87.NET">
+      <HintPath>..\VSOP87.NET\bin\x64\Release\net6.0\VSOP87.NET.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

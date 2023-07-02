@@ -86,16 +86,16 @@
             _ => throw new ArgumentException()
         };
 
-        public static CoordinatesRefrence GetCoordinatesRefrence(VSOPVersion ver) => ver switch
+        public static CoordinatesReference GetCoordinatesReference(VSOPVersion ver) => ver switch
         {
-            VSOPVersion.VSOP87E => CoordinatesRefrence.Barycentric,
-            _ => CoordinatesRefrence.Heliocentric
+            VSOPVersion.VSOP87E => CoordinatesReference.Barycentric,
+            _ => CoordinatesReference.Heliocentric
         };
 
-        public static ReferenceFrame GetFrameRefrence(VSOPVersion ver) => ver switch
+        public static TimeFrameReference GetTimeFrameReference(VSOPVersion ver) => ver switch
         {
-            VSOPVersion.VSOP87C or VSOPVersion.VSOP87D => ReferenceFrame.EclipticOfDate,
-            _ => ReferenceFrame.EclipticJ2000
+            VSOPVersion.VSOP87C or VSOPVersion.VSOP87D => TimeFrameReference.EclipticOfDate,
+            _ => TimeFrameReference.EclipticJ2000
         };
     }
 }
