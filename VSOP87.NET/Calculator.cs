@@ -1,10 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
-
-#if BENCHMARK
 using BenchmarkDotNet.Attributes;
-#endif
 
 namespace VSOP87
 {
@@ -137,7 +134,6 @@ namespace VSOP87
                 RAD += Math.Tau;
         }
 
-#if BENCHMARK
         #region Performance Test
 
         private DateTime Tinput;
@@ -160,6 +156,5 @@ namespace VSOP87
         }
 
         #endregion Performance Test
-#endif
     }
 }

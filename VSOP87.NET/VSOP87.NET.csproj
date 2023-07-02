@@ -19,18 +19,22 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'">
     <DefineConstants>$(DefineConstants);BENCHMARK</DefineConstants>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0|x64'">
     <DefineConstants>$(DefineConstants);BENCHMARK</DefineConstants>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net6.0|x64'">
     <DefineConstants>$(DefineConstants);BENCHMARK</DefineConstants>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0|x64'">
     <DefineConstants>$(DefineConstants);BENCHMARK</DefineConstants>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
