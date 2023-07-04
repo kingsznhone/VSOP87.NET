@@ -23,7 +23,7 @@ namespace AsyncTest
             VSOPTime vTime = new VSOPTime(Tinput);
             foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
             {
-                foreach (VSOPBody ib in Utility.AvailableBody(iv))
+                foreach (VSOPBody ib in Utility.ListAvailableBody(iv))
                 {
                     await CallAsync(ib, iv, vTime);
                     await Task.Delay(500);

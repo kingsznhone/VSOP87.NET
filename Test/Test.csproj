@@ -9,9 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="VSOP87.NET">
-      <HintPath>..\VSOP87.NET\bin\x64\Release\net6.0\VSOP87.NET.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\VSOP87.NET\VSOP87.NET.csproj" />
   </ItemGroup>
 
 </Project>

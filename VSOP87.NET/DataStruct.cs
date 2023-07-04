@@ -96,29 +96,12 @@ namespace VSOP87
     }
 
     [Serializable]
-    public struct PlanetTableF
-    {
-        public VSOPVersion version;
-        public VSOPBody body;
-        public VariableTableF[] variables;
-    }
-
-    [Serializable]
     public struct VariableTable
     {
         public VSOPVersion version;
         public VSOPBody body;
         public int ic;
         public PowerTable[] PowerTables;
-    }
-
-    [Serializable]
-    public struct VariableTableF
-    {
-        public VSOPVersion version;
-        public VSOPBody body;
-        public int ic;
-        public PowerTableF[] PowerTables;
     }
 
     [Serializable]
@@ -130,17 +113,6 @@ namespace VSOP87
         public int it;
         public Header header;
         public Term[] Terms;
-    }
-
-    [Serializable]
-    public struct PowerTableF
-    {
-        public VSOPVersion version;
-        public VSOPBody body;
-        public int ic;
-        public int it;
-        public Header header;
-        public TermF[] Terms;
     }
 
     [Serializable]
@@ -199,34 +171,5 @@ namespace VSOP87
         /// </summary>
         [FieldOffset(24)]
         public double C;
-    }
-
-    [Serializable]
-    [StructLayout(LayoutKind.Explicit)]
-    public struct TermF
-    {
-        /// <summary>
-        /// rank of the term in a serie
-        /// </summary>
-        [FieldOffset(0)]
-        public int rank;
-
-        /// <summary>
-        /// amplitude A
-        /// </summary>
-        [FieldOffset(8)]
-        public float A;
-
-        /// <summary>
-        /// phase     B
-        /// </summary>
-        [FieldOffset(16)]
-        public float B;
-
-        /// <summary>
-        /// frequency C
-        /// </summary>
-        [FieldOffset(24)]
-        public float C;
     }
 }
