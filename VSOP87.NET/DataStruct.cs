@@ -26,7 +26,8 @@ namespace VSOP87
         SATURN = 6,
         URANUS = 7,
         NEPTUNE = 8,
-        EMB = 9
+        PLUTO =9, // Not exsist in VSOP87
+        EMB = 10
     }
 
     [Serializable]

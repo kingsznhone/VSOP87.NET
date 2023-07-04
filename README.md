@@ -38,7 +38,7 @@ If anyone replace it with fast sincos funtion. this Algorithm will become much f
 
 * NuGet Package Manager
     ```
-    PM> NuGet\Install-Package VSOP87.NET -Version 1.1.0
+    PM> NuGet\Install-Package VSOP87.NET -Version 1.1.2
     ```
 
 ```
@@ -77,6 +77,32 @@ Console.WriteLine("=============================================================
 ```
 
 # Change Log
+
+### V1.1.2 2023.07.05
+
+Bug fix
+
+Add ```VSOPTime.JulianDate``` property
+
+Delete float version. It's useful and nosense.
+
+Add ELL coord to XYZ coord conversion.
+
+Add ELL coord to LBR coord conversion.
+
+add XYZ coord to LBR coord conversion
+
+add LBR coord to XYZ coord conversion
+
+function that convert ELL to XYZ is copy from VSOP2013.
+
+This is a magic function I directly copy from VSOP2013.
+
+It's way beyond my math level.
+
+So I can't find how to inverse XYZ elements to ELL elements.
+
+Need help.
 
 ### V1.1.0 2023.07.02  
 Bug fix 
@@ -199,7 +225,7 @@ This Class Provide some useful function.
 
 <br/>
 
-### ```static List<VSOPBody> AvailableBody(VSOPVersion ver)```
+### ```static List<VSOPBody> ListAvailableBody(VSOPVersion ver)```
 
 #### Parameters
 
