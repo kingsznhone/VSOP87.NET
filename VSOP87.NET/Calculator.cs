@@ -24,7 +24,7 @@ namespace VSOP87
         /// <param name="ibody">VSOP87 Planet</param>
         /// <param name="iver">VSOP87 Version</param>
         /// <param name="TDB">Barycentric Dynamical Time</param>
-        /// <returns></returns>
+        /// <returns>Result contain version, body, coordinates reference/type, time frame,and variables</returns>
         /// <exception cref="ArgumentException"></exception>
         public VSOPResult GetPlanetPosition(VSOPBody ibody, VSOPVersion iver, VSOPTime time)
         {
@@ -32,7 +32,7 @@ namespace VSOP87
             {
                 int tableIndex = VSOP87DATA.FindIndex(x => x.version == iver && x.body == ibody);
 
-                double[] result = Calculate(VSOP87DATA[tableIndex], VSOPTime.ToJulianDate(time.TDB));
+                double[] result = Calculate(VSOP87DATA[tableIndex], time.JulianDate);
 
                 switch (iver)
                 {
@@ -54,6 +54,14 @@ namespace VSOP87
             }
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="ibody">VSOP87 Planet</param>
+        /// <param name="iver">VSOP87 Version</param>
+        /// <param name="TDB">Barycentric Dynamical Time</param>
+        /// <returns>Result contain version, body, coordinates reference/type, time frame,and variables</returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<VSOPResult> GetPlanetPositionAsync(VSOPBody ibody, VSOPVersion iver, VSOPTime time)
         {
             return await Task.Run(() => GetPlanetPosition(ibody, iver, time));
@@ -102,25 +110,16 @@ namespace VSOP87
             if (Planet.version == VSOPVersion.VSOP87)
             {
                 ModuloCircle(ref Result[1]);
-                ModuloCircle(ref Result[2]);
-                ModuloCircle(ref Result[3]);
-                ModuloCircle(ref Result[4]);
-                ModuloCircle(ref Result[5]);
+                return Result.ToArray();
             }
-            else if (Utility.GetCoordinatesType(Planet.version) == CoordinatesType.Rectangular)
+            for (int ic = 0; ic < 3; ic++)
             {
-                for (int ic = 0; ic < 3; ic++)
-                {
-                    Result[ic + 3] /= 365250d;
-                }
+                Result[ic + 3] /= 365250d;
             }
             //Modulo Spherical longitude L,B,l',B' into [0,2*pi)
-            else if (Utility.GetCoordinatesType(Planet.version) == CoordinatesType.Spherical)
+            if (Utility.GetCoordinatesType(Planet.version) == CoordinatesType.Spherical)
             {
                 ModuloCircle(ref Result[0]);
-                ModuloCircle(ref Result[1]);
-                ModuloCircle(ref Result[3]);
-                ModuloCircle(ref Result[4]);
             }
             return Result.ToArray();
         }

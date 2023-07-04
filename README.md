@@ -190,54 +190,6 @@ Wrapper of ```GetPlanetPosition```,but async.
 
 <br/>
 
-## Class CalculatorF
-
-### Overview
-
-This Class provide single precision results.
-
-<br/>
-
-###  ```VSOPResultF Calculator.GetPlanetPosition(VSOPBody ibody, VSOPVersion iver, VSOPTime time)```
-
-Get Planet Position based on body, version, time.
-
-Use ```Utility.AvailableBody(VSOPVersion ver)``` to check all available body in version.
-
-<br/>
-
-#### Parameters
-
-```ibody``` VSOPBody
-
-Enum of all planet in VSOP87.
-
-```iver``` VSOPVersion
-
-Enum of all Version in VSOP87.
-
-```time``` VSOPTime
-
-A wrapper of ```Datetime```. Help converting between UTC & TDB.
-
-<br/>
-
-#### Return
-
-```VSOPResultF``` 
-
-abstract class contain 6 variables of planet position. 
-
-should be explicit cast to ```VSOPResultF_ELL```, ```VSOPResultF_XYZ```, ```VSOPResultF_LBR```.
-
-<br/>
-
-### ```async Task<VSOPResultF> GetPlanetPositionAsync(VSOPBody ibody, VSOPVersion iver, VSOPTime time)```
-
-Wrapper of ```GetPlanetPosition```,but async.
-
-<br/>
-
 
 ## Static Class Utility
 
@@ -340,6 +292,114 @@ Enum of Version in VSOP87.
 Time frame reference based on version. 
 
 <br>
+
+### ```static double[,] MultiplyMatrix(double[,] A, double[,] B)```
+
+A handy matrix multiply function
+
+#### Parameters
+
+```A``` double[,]
+
+Matrix A
+
+<br>
+
+```B``` double[,]
+
+Matrix B
+
+<br>
+
+#### Return
+
+```double[,]```
+
+Matrix C = AB.
+
+<br>
+
+### ```static double[] XYZtoLBR(double[] xyz)```
+
+#### Parameters
+
+```xyz``` double[]
+
+Array of cardinal coordinate elements
+
+<br>
+
+#### Return
+
+```double[]```
+
+Array of spherical coordinate elements
+
+<br>
+
+### ```static double[] LBRtoXYZ(double[] lbr)```
+
+#### Parameters
+
+```lbr``` double[]
+
+Array of spherical coordinate elements
+
+<br>
+
+#### Return
+
+```double[]```
+
+Array of cardinal coordinate elements
+
+<br>
+
+### ```static double[] ELLtoXYZ(double[] ell)```
+
+This is a magic function I directly copy from VSOP2013.
+
+It's way beyond my math level.
+
+So I can't find how to inverse XYZ elements to ELL elements.
+
+Need help.
+
+#### Parameters
+
+```ell``` double[]
+
+Array of elliptic coordinate elements
+
+<br>
+
+#### Return
+
+```double[]```
+
+Array of cardinal coordinate elements
+
+<br>
+
+### ```static double[] ELLtoLBR(double[] ell)```
+
+#### Parameters
+
+```ell``` double[]
+
+Array of elliptic coordinate elements
+
+<br>
+
+#### Return
+
+```double[]```
+
+Array of spherical coordinate elements
+
+<br>
+
+
 
 ### Class VSOPResult_XYZ : VSOPResult
 
@@ -557,25 +617,6 @@ radius velocity (au/day)
 
 <br>
 
-### Class VSOPResultF_XYZ : VSOPResultF
-
-Almost same as ```VSOPResult_XYZ```, float version
-
-<br>
-
-### Class VSOPResultF_ELL : VSOPResultF
-
-Almost same as ```VSOPResult_ELL```, float version
-
-<br>
-
-### Class VSOPResultF_LBR : VSOPResultF
-
-Almost same as ```VSOPResult_LBR```, float version
-
-<br>
-
-
 ### Class VSOPTime
 #### summary
 
@@ -616,6 +657,10 @@ Terrestrial Time (aka. TDT)
 Barycentric Dynamical Time 
 
 VSOP87 use this time frame.
+
+```double JulianDate```
+
+Get Julian Date from TDB.
 
 <br>
 
