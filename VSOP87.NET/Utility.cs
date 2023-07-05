@@ -184,7 +184,7 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// Convert cardinal coordinate to spherical coordinate
+        /// Convert cartesian coordinate to spherical coordinate
         /// </summary>
         /// <param name="xyz">x,y,z,dx,dy,dz</param>
         /// <returns>l,b,r,dl,db,dr</returns>
@@ -245,7 +245,7 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// convert spherical coordinate to cardinal coordinate
+        /// convert spherical coordinate to cartesian coordinate
         /// </summary>
         /// <param name="lbr">l,b,r,dl,db,dr</param>
         /// <returns>x,y,z,dx,dy,dz</returns>
@@ -288,13 +288,13 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// Convert Elliptic coordinate to cardinal coordinate.
+        /// Convert Elliptic coordinate to cartesian coordinate.
         /// This is kind of magic that I will never undersdand.
         /// Directly translate from VSOP2013.f.
         /// </summary>
         /// <param name="body">planet</param>
         /// <param name="ell">Elliptic Elements: a,l,k,h,q,p </param>
-        /// <returns>Cardinal Heliocentric Coordinates</returns>
+        /// <returns>cartesian Heliocentric Coordinates</returns>
         public static double[] ELLtoXYZ(VSOPBody body, double[] ell)
         {
             Span<double> xyz = stackalloc double[6];

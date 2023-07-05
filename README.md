@@ -351,7 +351,7 @@ Matrix C = AB.
 
 ```xyz``` double[]
 
-Array of cardinal coordinate elements
+Array of cartesian coordinate elements
 
 <br>
 
@@ -377,7 +377,7 @@ Array of spherical coordinate elements
 
 ```double[]```
 
-Array of cardinal coordinate elements
+Array of cartesian coordinate elements
 
 <br>
 
@@ -403,7 +403,7 @@ Array of elliptic coordinate elements
 
 ```double[]```
 
-Array of cardinal coordinate elements
+Array of cartesian coordinate elements
 
 <br>
 
