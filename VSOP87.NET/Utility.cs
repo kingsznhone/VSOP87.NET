@@ -1,25 +1,22 @@
-﻿using Microsoft.VisualBasic;
-using System.Data;
-using System.Diagnostics.Metrics;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace VSOP87
 {
     public static class Utility
     {
-        static readonly double gmsol = 2.9591220836841438269e-04d;
-        static readonly double[] gmp = {
+        private static readonly double[] gmp = {
                         2.9591220836841438269e-04d,//sun (for body enum alignment)
                         4.9125474514508118699e-11d,//Mer
                         7.2434524861627027000e-10d,//Venus
-                        0,                         //earth (not exsist in vsop2013)
+                        8.9970116036316091182e-10d,//earth (not exsist in vsop2013)
                         9.5495351057792580598e-11d,//mars
                         2.8253458420837780000e-07d,//jupiter
                         8.4597151856806587398e-08d,//saturn
                         1.2920249167819693900e-08d,//uranus
                         1.5243589007842762800e-08d,//neptune
                         8.9970116036316091182e-10d,//EMB
-                        2.1886997654259696800e-12d, };//pluto(not exsist in vsop87)};
+        };
+
         /// <summary>
         /// List all available planet in selected version
         /// </summary>
@@ -128,8 +125,8 @@ namespace VSOP87
         /// <returns>Coordinates reference</returns>
         public static CoordinatesReference GetCoordinatesReference(VSOPVersion ver) => ver switch
         {
-            VSOPVersion.VSOP87E => CoordinatesReference.Barycentric,
-            _ => CoordinatesReference.Heliocentric
+            VSOPVersion.VSOP87E => CoordinatesReference.EclipticBarycentric,
+            _ => CoordinatesReference.EclipticHeliocentric
         };
 
         /// <summary>
@@ -137,10 +134,10 @@ namespace VSOP87
         /// </summary>
         /// <param name="ver">Version enum</param>
         /// <returns>Time Frame Reference</returns>
-        public static TimeFrameReference GetTimeFrameReference(VSOPVersion ver) => ver switch
+        public static ReferenceFrame GetTimeFrameReference(VSOPVersion ver) => ver switch
         {
-            VSOPVersion.VSOP87C or VSOPVersion.VSOP87D => TimeFrameReference.EclipticOfDate,
-            _ => TimeFrameReference.EclipticJ2000
+            VSOPVersion.VSOP87C or VSOPVersion.VSOP87D => ReferenceFrame.DynamicalDate,
+            _ => ReferenceFrame.DynamicalJ2000
         };
 
         /// <summary>
@@ -184,7 +181,7 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// Convert cardinal coordinate to spherical coordinate
+        /// Convert cartesian coordinate to spherical coordinate
         /// </summary>
         /// <param name="xyz">x,y,z,dx,dy,dz</param>
         /// <returns>l,b,r,dl,db,dr</returns>
@@ -198,7 +195,7 @@ namespace VSOP87
             double dx = xyz[3];
             double dy = xyz[4];
             double dz = xyz[5];
-            double l, b, r,dl,db,dr;
+            double l, b, r, dl, db, dr;
 
             //r = sqrt(x^2+y^2+z^2)
             r = Math.Sqrt(x * x + y * y + z * z);
@@ -226,10 +223,10 @@ namespace VSOP87
                            {-y/(x*x+y*y)                 , x/(x*x+y*y)                 , 0                                   }};
             double[,] Velocity = { { dx }, { dy }, { dz } };
             var C = MultiplyMatrix(J_1, Velocity);
-            dl = C[2,0];
-            db = C[1,0];
-            dr = C[0,0];
-            
+            dl = C[2, 0];
+            db = C[1, 0];
+            dr = C[0, 0];
+
             //modulo r into [0,Tau)
             l -= Math.Floor(l / Math.Tau) * Math.Tau;
             if (l < 0)
@@ -239,20 +236,20 @@ namespace VSOP87
             lbr[1] = b;
             lbr[2] = r;
             lbr[3] = dl;
-            lbr[4] =-db;
+            lbr[4] = -db;
             lbr[5] = dr;
             return lbr.ToArray();
         }
 
         /// <summary>
-        /// convert spherical coordinate to cardinal coordinate
+        /// convert spherical coordinate to cartesian coordinate
         /// </summary>
         /// <param name="lbr">l,b,r,dl,db,dr</param>
         /// <returns>x,y,z,dx,dy,dz</returns>
         public static double[] LBRtoXYZ(double[] lbr)
         {
             Span<double> xyz = stackalloc double[6];
-            double x,y,z,dx,dy,dz;
+            double x, y, z, dx, dy, dz;
             double l, b, r, dl, db, dr;
 
             l = lbr[0];
@@ -283,18 +280,18 @@ namespace VSOP87
             xyz[2] = z;
             xyz[3] = dx;
             xyz[4] = dy;
-            xyz[5] =-dz;
+            xyz[5] = -dz;
             return xyz.ToArray();
         }
 
         /// <summary>
-        /// Convert Elliptic coordinate to cardinal coordinate.
+        /// Convert Elliptic coordinate to cartesian coordinate.
         /// This is kind of magic that I will never undersdand.
         /// Directly translate from VSOP2013.f.
         /// </summary>
         /// <param name="body">planet</param>
         /// <param name="ell">Elliptic Elements: a,l,k,h,q,p </param>
-        /// <returns>Cardinal Heliocentric Coordinates</returns>
+        /// <returns>cartesian Heliocentric Coordinates</returns>
         public static double[] ELLtoXYZ(VSOPBody body, double[] ell)
         {
             Span<double> xyz = stackalloc double[6];
@@ -311,7 +308,7 @@ namespace VSOP87
             double xm, xr, xms, xmc, xn;
 
             //Initialization
-            rgm = Math.Sqrt(gmp[(int)body] + gmsol);
+            rgm = Math.Sqrt(gmp[(int)body] + gmp[0]);
 
             //Computation
             xfi = Math.Sqrt(1.0d - (k * k) - (h * h));
@@ -368,6 +365,101 @@ namespace VSOP87
         {
             double[] xyz = ELLtoXYZ(body, ell);
             return XYZtoLBR(xyz);
+        }
+
+        /// <summary>
+        /// Convert innertial frame from dynamical to ICRS.
+        /// </summary>
+        /// <param name="dynamical">Ecliptic Heliocentric Coordinates - Dynamical Frame J2000</param>
+        /// <returns>Equatorial Heliocentric Coordinates - ICRS Frame J2000</returns>
+        public static double[] DynamicaltoICRS(double[] dynamical)
+        {
+            Span<double> icrs = stackalloc double[6];
+
+            double dgrad = Math.PI / 180.0d;
+            double sdrad = Math.PI / 180.0d / 3600.0d;
+            double eps = (23.0d + 26.0d / 60.0d + 21.411360d / 3600.0d) * dgrad;
+            double phi = -0.051880d * sdrad;
+
+            double Seps, Ceps, Sphi, Cphi;
+            Seps = Math.Sin(eps);
+            Ceps = Math.Cos(eps);
+            Sphi = Math.Sin(phi);
+            Cphi = Math.Cos(phi);
+
+            //Rotation Matrix
+            double[,] R = new double[,] { {Cphi, -Sphi*Ceps,  Sphi*Seps },
+                                          {Sphi,  Cphi*Ceps, -Cphi*Seps },
+                                          {0,     Seps,       Ceps      }};
+
+            // Vector for cardinal coordnate element
+            double[,] A = new double[,] { {dynamical[0]},
+                                          {dynamical[1]},
+                                          {dynamical[2]}};
+
+            double[,] C = MultiplyMatrix(R, A);
+
+            dynamical[0] = C[0, 0];
+            dynamical[1] = C[1, 0];
+            dynamical[2] = C[2, 0];
+
+            A = new double[,] { {dynamical[3]},
+                                {dynamical[4]},
+                                {dynamical[5]}};
+
+            C = MultiplyMatrix(R, A);
+            dynamical[3] = C[0, 0];
+            dynamical[4] = C[1, 0];
+            dynamical[5] = C[2, 0];
+
+            return dynamical.ToArray();
+        }
+
+        /// <summary>
+        /// Convert innertial frame from ICRS to dynamical.
+        /// </summary>
+        /// <param name="icrs">Equatorial Heliocentric Coordinates - ICRS Frame J2000</param>
+        /// <returns>Ecliptic Heliocentric Coordinates - Dynamical Frame J2000</returns>
+        public static double[] ICRStoDynamical(double[] icrs)
+        {
+            double[] dynamical = new double[6];
+
+            double dgrad = Math.PI / 180.0d;
+            double sdrad = Math.PI / 180.0d / 3600.0d;
+            double eps = (23.0d + 26.0d / 60.0d + 21.411360d / 3600.0d) * dgrad;
+            double phi = -0.051880d * sdrad;
+
+            double Seps, Ceps, Sphi, Cphi;
+            Seps = Math.Sin(eps);
+            Ceps = Math.Cos(eps);
+            Sphi = Math.Sin(phi);
+            Cphi = Math.Cos(phi);
+
+            //Reverse Matrix
+            double[,] R_1 = new double[,] {{ Cphi,       Sphi,      0    },
+                                           {-Sphi*Ceps,  Cphi*Ceps, Seps },
+                                           { Sphi*Seps, -Cphi*Seps, Ceps }};
+            // Vector for cardinal coordnate element
+            double[,] A = new double[,] { {icrs[0]},
+                                          {icrs[1]},
+                                          {icrs[2]}};
+
+            double[,] C = MultiplyMatrix(R_1, A);
+
+            dynamical[0] = C[0, 0];
+            dynamical[1] = C[1, 0];
+            dynamical[2] = C[2, 0];
+
+            A = new double[,] { {icrs[3]},
+                                {icrs[4]},
+                                {icrs[5]}};
+
+            C = MultiplyMatrix(R_1, A);
+            dynamical[3] = C[0, 0];
+            dynamical[4] = C[1, 0];
+            dynamical[5] = C[2, 0];
+
+            return dynamical.ToArray();
         }
     }
 }

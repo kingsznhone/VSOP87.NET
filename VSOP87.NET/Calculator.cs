@@ -1,5 +1,6 @@
-﻿using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
+﻿using System.IO.Compression;
+using System.Reflection;
+using MessagePack;
 
 namespace VSOP87
 {
@@ -9,13 +10,11 @@ namespace VSOP87
 
         public Calculator()
         {
-            var debug = this.GetType().Assembly.GetManifestResourceNames();
-            using (Stream ms = Assembly.GetExecutingAssembly().GetManifestResourceStream("VSOP87.NET.Resources.VSOP87DATA.BIN"))
-            {
-#pragma warning disable SYSLIB0011
-                VSOP87DATA = (List<PlanetTable>)new BinaryFormatter().Deserialize(ms);
-#pragma warning restore SYSLIB0011
-            }
+            var assembly = Assembly.GetExecutingAssembly();
+            string datafilename = $"VSOP87.NET.Resources.VSOP87DATA.BIN";
+            using Stream s = assembly.GetManifestResourceStream(datafilename);
+            using BrotliStream bs = new(s, CompressionMode.Decompress);
+            VSOP87DATA = MessagePackSerializer.Deserialize<List<PlanetTable>>(bs);
         }
 
         /// <summary>
@@ -79,6 +78,7 @@ namespace VSOP87
             Span<double> Result = stackalloc double[6];
             Span<double> t = stackalloc double[6];
             double cu, su;
+            Term[] terms;
             for (int i = 0; i < 6; i++)
             {
                 t[i] = Math.Pow(phi, i);
@@ -89,19 +89,20 @@ namespace VSOP87
                 {
                     if (Planet.variables[iv].PowerTables is null) continue;
                     if (Planet.variables[iv].PowerTables[it].Terms is null) continue;
-                    foreach (Term term in Planet.variables[iv].PowerTables[it].Terms)
+                    terms = Planet.variables[iv].PowerTables[it].Terms;
+                    for (int i = 0; i < terms.Length; i++)
                     {
-                        (su, cu) = Math.SinCos(term.B + term.C * phi);
-                        Result[iv] = Result[iv] + term.A * cu * t[it];
+                        (su, cu) = Math.SinCos(terms[i].B + terms[i].C * phi);
+                        Result[iv] = Result[iv] + terms[i].A * cu * t[it];
 
                         // Original resolution specification.
                         if (Planet.version == VSOPVersion.VSOP87) continue;
 
                         // Derivative of 3 variables
                         if (it == 0)
-                            Result[iv + 3] += 0 - (t[it] * term.A * term.C * su);
+                            Result[iv + 3] += 0 - (t[it] * terms[i].A * terms[i].C * su);
                         else
-                            Result[iv + 3] += (t[it - 1] * it * term.A * cu) - (t[it] * term.A * term.C * su);
+                            Result[iv + 3] += (t[it - 1] * it * terms[i].A * cu) - (t[it] * terms[i].A * terms[i].C * su);
                     }
                 }
             }

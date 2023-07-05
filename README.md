@@ -31,7 +31,9 @@ If anyone replace it with fast sincos funtion. this Algorithm will become much f
 ![Performance Test](https://github.com/kingsznhone/VSOP87.NET/blob/master/PerformanceTest.png)
 4. Useful Utility class. Such as checking planet available in specific version.
 5. Async Api 
-
+6. Use [MessagePack](https://github.com/neuecc/MessagePack-CSharp#lz4-compression"MessagePack for C#") for binary serialize.
+<br>Initialization time becomes less than 10% of previous.
+7. Brotli compression on source data. ~34Mb -> ~3MB with no precision lost.
 <br>
 
 ## How to use
@@ -48,7 +50,7 @@ Calculator vsop = new Calculator();
 
 //Create VSOPTime using UTC .
 DateTime Tinput = DateTime.Now;
-VSOPTime vTime = new VSOPTime(Tinput.ToUniversalTime());
+VSOPTime vTime = new VSOPTime(Tinput.ToUniversalTime(),TimeFrame.UTC);
 
 //Calculate Earth's present position with VSOP version D
 var result=vsop.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
@@ -60,11 +62,13 @@ VSOPResult_LBR Result_LBR = (VSOPResult_LBR)result;
 //Print result
 
 Console.WriteLine($"Version: {Enum.GetName(Result_LBR.Version)}");
+Console.WriteLine($"Body: {Enum.GetName(Result_LBR.Body)}");
 Console.WriteLine($"Coordinates Type: {Enum.GetName(Result_LBR.CoordinatesType)}");
 Console.WriteLine($"Coordinates Reference: {Enum.GetName(Result_LBR.CoordinatesReference)}");
-Console.WriteLine($"Time Frame Reference: {Enum.GetName(Result_LBR.TimeFrameReference)}");
-Console.WriteLine($"Body: {Enum.GetName(Result_LBR.Body)}");
-Console.WriteLine($"Time: {Result_LBR.Time.UTC.ToString("o")}");
+Console.WriteLine($"Reference Frame: {Enum.GetName(Result_LBR.ReferenceFrame)}");
+
+Console.WriteLine($"Time UTC: {Result_LBR.Time.UTC.ToString("o")}");
+Console.WriteLine($"Time UTC: {Result_LBR.Time.TDB.ToString("o")}");
 Console.WriteLine("---------------------------------------------------------------");
 Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude (rad)", Result_LBR.l));
 Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude (rad)", Result_LBR.b));
@@ -77,6 +81,14 @@ Console.WriteLine("=============================================================
 ```
 
 # Change Log
+
+### V1.1.5 2023.07.06
+
+Inpired from vsop2013, Add `dynamical equinox and ecliptic` to `ICRS frame` conversion.
+
+Use MessagePack and brotli to compress original data.
+
+Some bug fix. 
 
 ### V1.1.2 2023.07.05
 
@@ -96,9 +108,7 @@ add LBR coord to XYZ coord conversion
 
 function that convert ELL to XYZ is copy from VSOP2013.
 
-This is a magic function I directly copy from VSOP2013.
-
-It's way beyond my math level.
+This is a magic function way beyond my math level.
 
 So I can't find how to inverse XYZ elements to ELL elements.
 
@@ -351,7 +361,7 @@ Matrix C = AB.
 
 ```xyz``` double[]
 
-Array of cardinal coordinate elements
+Array of cartesian coordinate elements
 
 <br>
 
@@ -377,7 +387,7 @@ Array of spherical coordinate elements
 
 ```double[]```
 
-Array of cardinal coordinate elements
+Array of cartesian coordinate elements
 
 <br>
 
@@ -403,7 +413,7 @@ Array of elliptic coordinate elements
 
 ```double[]```
 
-Array of cardinal coordinate elements
+Array of cartesian coordinate elements
 
 <br>
 
@@ -425,9 +435,43 @@ Array of spherical coordinate elements
 
 <br>
 
+### ```static double[] DynamicaltoICRS(double[] xyz)```
 
+#### Parameters
 
-### Class VSOPResult_XYZ : VSOPResult
+```xyz``` double[]
+
+Array of cartesian coordinate elements that inertial frame of dynamical equinox and ecliptic.
+
+<br>
+
+#### Return
+
+```double[]```
+
+Array of cartesian coordinate elements that inertial frame of ICRS equinox and ecliptic.
+
+<br>
+
+### ```static double[] ICRStoDynamical(double[] xyz)```
+
+#### Parameters
+
+```xyz``` double[]
+
+Array of cartesian coordinate elements that inertial frame of ICRS equinox and ecliptic.
+
+<br>
+
+#### Return
+
+```double[]```
+
+Array of cartesian coordinate elements that inertial frame of dynamical equinox and ecliptic.
+
+<br>
+
+## Class VSOPResult_XYZ : VSOPResult
 
 ### Properties
 
@@ -455,9 +499,9 @@ Coordinates type of this result.
 
 <br>
 
-```TimeFrameReference TimeFrameReference { get; }```
+```ReferenceFrame ReferenceFrame { get; }```
 
-Time frame reference  of this result.
+Reference frame of this result.
 
 <br>
 
@@ -497,9 +541,15 @@ Velocity y (au/day)
 
 Velocity z (au/day)
 
+### Methods
+
+```VSOPResult_LBR ToLBR()```
+
+Convert Result to Spherical coordinate.
+
 <br>
 
-### Class VSOPResult_ELL : VSOPResult
+## Class VSOPResult_ELL : VSOPResult
 
 ### Properties
 
@@ -527,9 +577,9 @@ Coordinates type of this result.
 
 <br>
 
-```TimeFrameReference TimeFrameReference { get; }```
+```ReferenceFrame ReferenceFrame { get; }```
 
-Time frame reference  of this result.
+Reference frame of this result.
 
 <br>
 
@@ -570,8 +620,22 @@ sin(i/2)*sin(omega) (rd)
 
 <br>
 
+### Methods
 
-### Class VSOPResult_LBR : VSOPResult
+```VSOPResult_XYZ ToXYZ()```
+
+Convert Result to Cartesian coordinate.
+
+<br>
+
+```VSOPResult_LBR ToLBR()```
+
+Convert Result to Spherical coordinate.
+
+<br>
+
+
+## Class VSOPResult_LBR : VSOPResult
 
 ### Properties
 
@@ -599,9 +663,9 @@ Coordinates type of this result.
 
 <br>
 
-```TimeFrameReference TimeFrameReference { get; }```
+```ReferenceFrame ReferenceFrame { get; }```
 
-Time frame reference  of this result.
+Reference frame of this result.
 
 <br>
 
@@ -643,7 +707,16 @@ radius velocity (au/day)
 
 <br>
 
-### Class VSOPTime
+### Methods
+
+```VSOPResult_XYZ ToXYZ()```
+
+Convert Result to Cartesian coordinate.
+
+<br>
+
+## Class VSOPTime
+
 #### summary
 
 This class provide time convert and management for VSOP87.
@@ -652,17 +725,23 @@ This class provide time convert and management for VSOP87.
 
 #### Constructor
 
-```VSOPTime(DateTime UTC)```
+```VSOPTime(DateTime dt, TimeFrame frame)```
 
-Use UTC Time to initialize VSOPTime.
+Time to initialize VSOPTime.
 
 <br>
 
 #### Properties
 
-```DateTime UTC```
+```DateTime dt```
 
-UTC Time frame.
+time struct
+
+<br>
+
+```TTimeFrame frame```
+
+Time frame of ```dt```.
 
 <br>
 
@@ -692,7 +771,7 @@ Get Julian Date from TDB.
 
 ### Methods
 
-```DateTime ChangeFrame(DateTime dt, TimeFrame TargetFrame)```
+```static DateTime ChangeFrame(DateTime dt, TimeFrame SourceFrame, TimeFrame TargetFrame)```
 
 #### Parameters
 
