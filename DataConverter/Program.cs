@@ -1,5 +1,7 @@
-﻿using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
+﻿using System.Diagnostics;
+using System.IO.Compression;
+using System.Reflection;
+using MessagePack;
 
 namespace VSOP87
 {
@@ -10,11 +12,12 @@ namespace VSOP87
             /// <summary>
             /// Transform Source Data to binary format
             /// </summary>
-
-            //List to Serialize
             List<PlanetTable> VSOP87DATA = new List<PlanetTable>();
 
             string[] ResourceFiles = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+
+            Stopwatch sw = new();
+            sw.Restart();
 
             foreach (string file in ResourceFiles)
             {
@@ -22,11 +25,36 @@ namespace VSOP87
                 VSOP87DATA.Add(ReadPlanet(file));
             }
 
+            sw.Stop();
+            double ticks = sw.ElapsedTicks;
+            double Freq = Stopwatch.Frequency;
+            double milliseconds = (ticks / Freq) * 1000;
+            Console.WriteLine($"Data Read & Convert OK...Elapsed milliseconds: {milliseconds} ms");
+            Console.WriteLine();
+
             //Dump
+            sw.Restart();
 
             DirectoryInfo OutputDir = new DirectoryInfo(Directory.GetCurrentDirectory());
             DumpData(OutputDir, VSOP87DATA);
 
+            sw.Stop();
+            ticks = sw.ElapsedTicks;
+            milliseconds = (ticks / Freq) * 1000;
+            Console.WriteLine($"Data Dumped OK. Elapsed: {milliseconds}ms");
+            Console.WriteLine();
+
+            //Reload to verify
+
+            sw.Restart();
+
+            LoadData(OutputDir);
+
+            sw.Stop();
+            ticks = sw.ElapsedTicks;
+            milliseconds = (ticks / Freq) * 1000;
+            Console.WriteLine($"Dump Data Reload Test OK. Elapsed: {milliseconds}ms");
+            Console.WriteLine("Press Enter to exit...");
             Console.ReadLine();
         }
 
@@ -77,8 +105,6 @@ namespace VSOP87
                     }
                 }
             }
-            Console.WriteLine("Load OK");
-            Console.WriteLine();
 
             return planetdata;
         }
@@ -129,17 +155,20 @@ namespace VSOP87
                 File.Delete(filename);
             }
 
-            using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate))
-            {
-                BinaryFormatter bf = new BinaryFormatter();
-#pragma warning disable SYSLIB0011
-                bf.Serialize(fs, VSOP87DATA);
-#pragma warning restore SYSLIB0011
-            }
-
-            Console.WriteLine(filename + Environment.NewLine + "Dump OK");
-            Console.WriteLine();
+            using FileStream fs = new(filename, FileMode.OpenOrCreate);
+            using BrotliStream bs = new(fs, CompressionLevel.SmallestSize);
+            MessagePackSerializer.Serialize(bs, VSOP87DATA);
+            Console.WriteLine(filename);
         }
 
+        private static List<PlanetTable> LoadData(DirectoryInfo dir)
+        {
+            string filename = Path.Combine(dir.FullName, "VSOP87DATA.BIN");
+            using FileStream fs = new(filename, FileMode.Open);
+            using BrotliStream bs = new(fs, CompressionMode.Decompress);
+            List<PlanetTable> tables = MessagePackSerializer.Deserialize<List<PlanetTable>>(bs);
+            if (tables is null) throw new Exception("Load Data Fail.");
+            return tables;
+        }
     }
 }

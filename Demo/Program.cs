@@ -1,31 +1,20 @@
-﻿using System.Diagnostics;
-using System.Globalization;
-using System.Net.WebSockets;
-using Microsoft.VisualBasic;
+﻿using System.Globalization;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Running;
+using Demo;
 using VSOP87;
 
 Calculator vsop = new Calculator();
 
 DateTime dt = DateTime.Now;
-string inputT = "2000-01-01T12:00:00.0000000Z";
-CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
-DateTimeStyles style = DateTimeStyles.AdjustToUniversal;
-DateTime.TryParse(inputT, culture, style, out dt);
-dt.ToUniversalTime();
-dt = dt.AddSeconds(-69.184);
-VSOPTime vTime = new VSOPTime(dt);
+//string inputT = "2000-01-01T12:00:00.0000000Z";
+//CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
+//DateTimeStyles style = DateTimeStyles.AdjustToUniversal;
+//DateTime.TryParse(inputT, culture, style, out dt);
+//dt.ToUniversalTime();
+//dt = dt.AddSeconds(-69.184);
+VSOPTime vTime = new VSOPTime(dt,TimeFrame.UTC);
 Console.WriteLine(vTime.JulianDate);
-var ell =(VSOPResult_ELL) vsop.GetPlanetPosition(VSOPBody.NEPTUNE,VSOPVersion.VSOP87,vTime);
-
-var xyz = (VSOPResult_XYZ)vsop.GetPlanetPosition(VSOPBody.NEPTUNE, VSOPVersion.VSOP87A, vTime);
-var lbr = (VSOPResult_LBR)vsop.GetPlanetPosition(VSOPBody.NEPTUNE, VSOPVersion.VSOP87B, vTime);
-
-FormattedPrint(ell);
-FormattedPrint(xyz);
-FormattedPrint(lbr);
-//var debug = Utility.DateToJD(2000, 01, 01, 12, 00, 00);
-
-//Utility.JDtoDate(2451545d);
 
 //double Diff_max = 0;
 //foreach (VSOPBody ib in Utility.ListAvailableBody(VSOPVersion.VSOP87))
@@ -41,7 +30,6 @@ FormattedPrint(lbr);
 //        Diff_max = Math.Max(Diff_max, diff_pct);
 //        Debug.Assert(diff_pct < Math.Pow(10, -2));
 //        Debug.Assert(Trans[i] * resultA[i] > 0);
-
 //        Console.WriteLine($"{ib}-{i} to XYZ\t\t\tDIFF = {diff}\tpct{diff_pct:p2}");
 //    }
 //}
@@ -52,7 +40,6 @@ FormattedPrint(lbr);
 //    var resultC = vsop.GetPlanetPosition(ib, VSOPVersion.VSOP87A, vTime).Variables;
 //    var resultD = vsop.GetPlanetPosition(ib, VSOPVersion.VSOP87B, vTime).Variables;
 //    var Trans = Utility.XYZtoLBR(resultC);
-
 //    for (int i = 0; i < resultD.Length; i++)
 //    {
 //        double diff = Math.Abs(Trans[i] - resultD[i]);
@@ -64,32 +51,84 @@ FormattedPrint(lbr);
 //    }
 //}
 
+foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
+{
+    foreach (VSOPBody ib in Utility.ListAvailableBody(iv))
+    {
+        var results = vsop.GetPlanetPosition(ib, iv, vTime);
+        FormattedPrint(results);
+    }
+}
 
-//foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
-//{
-//    foreach (VSOPBody ib in Utility.ListAvailableBody(iv))
-//    {
-//        var results = vsop.GetPlanetPosition(ib, iv, vTime);
-//        FormattedPrint(results);
-//    }
-//}
 
+Console.Write("Press Enter To Start Performance Test...");
 Console.ReadLine();
+#if DEBUG
+var summary = BenchmarkRunner.Run<PerfTest>(new DebugBuildConfig());
+#else
+var summary = BenchmarkRunner.Run<PerfTest>();
+#endif
+
 Console.Write("Press Enter To Exit...");
 Console.ReadLine();
 
 void FormattedPrint(VSOPResult Result)
 {
-    if (Result.Version == VSOPVersion.VSOP87)
+    Console.WriteLine("===============================================================");
+    WriteColorLine(ConsoleColor.Blue, "PLANETARY EPHEMERIS VSOP87");
+    Console.WriteLine("===============================================================");
+    WriteColorLine("Version: ", ConsoleColor.Green, $"\t\t{Enum.GetName(Result.Version)} ");
+    WriteColorLine("Body: ", ConsoleColor.Green, $"\t\t\t{Enum.GetName(Result.Body)}");
+    switch (Result.CoordinatesType)
+    {
+        case CoordinatesType.Elliptic:
+            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, $"\tElliptic Elements");
+            break;
+
+        case CoordinatesType.Rectangular:
+            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, $"\tCartesian Coordinate");
+            break;
+
+        case CoordinatesType.Spherical:
+            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, $"\tSpherical Coordinate");
+            break;
+    }
+    switch (Result.CoordinatesReference)
+    {
+        case CoordinatesReference.EclipticHeliocentric:
+            WriteColorLine("Coordinates Reference: ", ConsoleColor.Green, $"\tEcliptic Heliocentric");
+            break;
+
+        case CoordinatesReference.EclipticBarycentric:
+            WriteColorLine("Coordinates Reference: ", ConsoleColor.Green, $"\tEcliptic Barycentric");
+            break;
+
+        case CoordinatesReference.EquatorialHeliocentric:
+            WriteColorLine("Coordinates Reference: ", ConsoleColor.Green, $"\tEquatorial Heliocentric");
+            break;
+    }
+
+    switch (Result.ReferenceFrame)
+
+    {
+        case ReferenceFrame.DynamicalJ2000:
+            WriteColorLine("Reference Frame: ", ConsoleColor.Green, $"\tDynamical equinox and ecliptic J2000");
+            break;
+
+        case ReferenceFrame.DynamicalDate:
+            WriteColorLine("Reference Frame: ", ConsoleColor.Green, $"\tDynamical equinox and ecliptic of date");
+            break;
+
+        case ReferenceFrame.ICRSJ2000:
+            WriteColorLine("Reference Frame: ", ConsoleColor.Green, $"\tICRS equinox and ecliptic J2000");
+            break;
+    }
+    WriteColorLine("At UTC: ", ConsoleColor.Green, $"\t\t{Result.Time.UTC.ToUniversalTime().ToString("o")}");
+    WriteColorLine("At TDB: ", ConsoleColor.Green, $"\t\t{Result.Time.TDB.ToString("o")}");
+
+    if (Result is VSOPResult_ELL)
     {
         var ResultELL = ((VSOPResult_ELL)Result);
-        Console.WriteLine("===============================================================");
-        WriteColorLine("Version: ", ConsoleColor.Green, $"\t\t{Enum.GetName(Result.Version)} ");
-        WriteColorLine("Coordinates Type: ", ConsoleColor.Green, "\tHeliocentric Elliptic");
-        WriteColorLine("Reference Frame: ", ConsoleColor.Green, "\tDynamical Equinox and Ecliptic J2000");
-        WriteColorLine("Body: ", ConsoleColor.Green, $"\t\t\t{Enum.GetName(Result.Body)}");
-        WriteColorLine("At UTC: ", ConsoleColor.Green, $"\t\t{Result.Time.UTC.ToUniversalTime().ToString("o")}");
-        WriteColorLine("At TDB: ", ConsoleColor.Green, $"\t\t{Result.Time.TDB.ToString("o")}");
         Console.WriteLine("---------------------------------------------------------------");
         Console.WriteLine(String.Format("{0,-33}{1,30}", "semi-major axis (au)", ResultELL.a));
         Console.WriteLine(String.Format("{0,-33}{1,30}", "mean longitude (rad)", ResultELL.l));
@@ -106,32 +145,9 @@ void FormattedPrint(VSOPResult Result)
         Console.WriteLine();
     }
 
-    if (Result.Version == VSOPVersion.VSOP87A ||
-        Result.Version == VSOPVersion.VSOP87C ||
-        Result.Version == VSOPVersion.VSOP87E)
+    if (Result is VSOPResult_XYZ)
     {
         var ResultXYZ = ((VSOPResult_XYZ)Result);
-        Console.WriteLine("===============================================================");
-        WriteColorLine("Version: ", ConsoleColor.Green, $"\t\t{Enum.GetName(Result.Version)} ");
-        if (ResultXYZ.Version == VSOPVersion.VSOP87A)
-        {
-            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, "\tHeliocentric Rectangular");
-            WriteColorLine("Reference Frame: ", ConsoleColor.Green, "\tDynamical Equinox and Ecliptic J2000");
-        }
-        if (ResultXYZ.Version == VSOPVersion.VSOP87C)
-        {
-            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, "\tHeliocentric Rectangular");
-            WriteColorLine("Reference Frame: ", ConsoleColor.Green, "\tDynamical Equinox and Ecliptic of date");
-        }
-        if (ResultXYZ.Version == VSOPVersion.VSOP87E)
-        {
-            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, "\tBarycentric  Rectangular");
-            WriteColorLine("Reference Frame: ", ConsoleColor.Green, "\tDynamical Equinox and Ecliptic J2000");
-        }
-        WriteColorLine("Body: ", ConsoleColor.Green, $"\t\t\t{Enum.GetName(Result.Body)}");
-        WriteColorLine("At UTC: ", ConsoleColor.Green, $"\t\t{Result.Time.UTC.ToString("o")}");
-        WriteColorLine("At TDB: ", ConsoleColor.Green, $"\t\t{Result.Time.TDB.ToString("o")}");
-
         Console.WriteLine("---------------------------------------------------------------");
         Console.WriteLine(String.Format("{0,-33}{1,30}", "position x (au)", ResultXYZ.x));
         Console.WriteLine(String.Format("{0,-33}{1,30}", "position y (au)", ResultXYZ.y));
@@ -144,24 +160,9 @@ void FormattedPrint(VSOPResult Result)
         Console.WriteLine();
     }
 
-    if (Result.Version == VSOPVersion.VSOP87B || Result.Version == VSOPVersion.VSOP87D)
+    if (Result is VSOPResult_LBR)
     {
         var ResultLBR = (VSOPResult_LBR)Result;
-        Console.WriteLine("===============================================================");
-        WriteColorLine("Version: ", ConsoleColor.Green, $"\t\t{Enum.GetName(Result.Version)} ");
-        if (ResultLBR.Version == VSOPVersion.VSOP87B)
-        {
-            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, "\tHeliocentric Spherical");
-            WriteColorLine("Reference Frame: ", ConsoleColor.Green, "\tDynamical Equinox and Ecliptic J2000");
-        }
-        if (ResultLBR.Version == VSOPVersion.VSOP87D)
-        {
-            WriteColorLine("Coordinates Type: ", ConsoleColor.Green, "\tHeliocentric Spherical");
-            WriteColorLine("Reference Frame: ", ConsoleColor.Green, "\tDynamical Equinox and Ecliptic of date");
-        }
-        WriteColorLine("Body: ", ConsoleColor.Green, $"\t\t\t{Enum.GetName(Result.Body)}");
-        WriteColorLine("At UTC: ", ConsoleColor.Green, $"\t\t{Result.Time.UTC.ToString("o")}");
-        WriteColorLine("At TDB: ", ConsoleColor.Green, $"\t\t{Result.Time.TDB.ToString("o")}");
         Console.WriteLine("---------------------------------------------------------------");
         Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude (rad)", ResultLBR.l));
         Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude (rad)", ResultLBR.b));
@@ -170,6 +171,7 @@ void FormattedPrint(VSOPResult Result)
         Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude velocity (rd/day)", ResultLBR.db));
         Console.WriteLine(String.Format("{0,-33}{1,30}", "radius velocity (au/day)", ResultLBR.dr));
         Console.WriteLine("===============================================================");
+        Console.WriteLine();
     }
 }
 

@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
-	  <VersionPrefix>1.1.2</VersionPrefix>
+	  <VersionPrefix>1.1.5</VersionPrefix>
 	  <Authors>KingsZNHONE</Authors>
 	  <Description>VSOP was developed and is maintained (updated with the latest data) by the scientists at the Bureau des Longitudes in Paris.
 VSOP87, computed the positions of the planets directly at any moment, as well as their orbital elements with improved accuracy.</Description>
@@ -28,6 +28,10 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="2.5.124" />
   </ItemGroup>
 
 </Project>

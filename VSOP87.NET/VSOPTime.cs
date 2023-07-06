@@ -37,22 +37,16 @@
         /// </summary>
         public double JulianDate => VSOPTime.ToJulianDate(TDB);
 
-        private List<Func<DateTime, DateTime>> UpGradeFuncs;
-        private List<Func<DateTime, DateTime>> DownGradeFuncs;
-
-        public VSOPTime(DateTime UTC)
-        {
-            if (UTC.Kind != DateTimeKind.Utc)
-            {
-                this._dt = UTC.ToUniversalTime();
-            }
-            this._dt = UTC.ToUniversalTime();
-
+        private static List<Func<DateTime, DateTime>>
             UpGradeFuncs = new List<Func<DateTime, DateTime>>(
                 new Func<DateTime, DateTime>[] { UTCtoTAI, TAItoTT, TTtoTDB });
-
-            DownGradeFuncs = new List<Func<DateTime, DateTime>>(
+        private static List<Func<DateTime, DateTime>> DownGradeFuncs = new List<Func<DateTime, DateTime>>(
                 new Func<DateTime, DateTime>[] { TAItoUTC, TTtoTAI, TDBtoTT });
+
+        public VSOPTime(DateTime dt, TimeFrame sourceframe)
+        {
+            _dt = ChangeFrame(dt, sourceframe, TimeFrame.UTC);
+            this._dt = _dt.ToUniversalTime();
         }
 
         /// <summary>
@@ -61,7 +55,7 @@
         /// <param name="dt">DateTime in UTC Frame</param>
         /// <param name="TargetFrame"></param>
         /// <returns></returns>
-        public DateTime ChangeFrame(DateTime dt, TimeFrame SourceFrame, TimeFrame TargetFrame)
+        public static DateTime ChangeFrame(DateTime dt, TimeFrame SourceFrame, TimeFrame TargetFrame)
         {
             while (SourceFrame != TargetFrame)
             {
@@ -98,8 +92,6 @@
         }
 
         #endregion UTC To TDB
-
-
 
         #region TDB to UTC
 
@@ -138,11 +130,10 @@
         /// <param name="JD"></param>
         /// <returns>Datetime in TDB Frame</returns>
         public static DateTime FromJulianDate(double JD)
-        {  
+        {
             return DateTime.FromOADate(JD - 2415018.5).ToUniversalTime();
         }
 
         #endregion JulianDate Convert
-
     }
 }

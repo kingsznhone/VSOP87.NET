@@ -9,59 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="VSOP87DATA\VSOP87.emb" />
-    <None Remove="VSOP87DATA\VSOP87.jup" />
-    <None Remove="VSOP87DATA\VSOP87.mar" />
-    <None Remove="VSOP87DATA\VSOP87.mer" />
-    <None Remove="VSOP87DATA\VSOP87.nep" />
-    <None Remove="VSOP87DATA\VSOP87.sat" />
-    <None Remove="VSOP87DATA\VSOP87.ura" />
-    <None Remove="VSOP87DATA\VSOP87.ven" />
-    <None Remove="VSOP87DATA\VSOP87A.ear" />
-    <None Remove="VSOP87DATA\VSOP87A.emb" />
-    <None Remove="VSOP87DATA\VSOP87A.jup" />
-    <None Remove="VSOP87DATA\VSOP87A.mar" />
-    <None Remove="VSOP87DATA\VSOP87A.mer" />
-    <None Remove="VSOP87DATA\VSOP87A.nep" />
-    <None Remove="VSOP87DATA\VSOP87A.sat" />
-    <None Remove="VSOP87DATA\VSOP87A.ura" />
-    <None Remove="VSOP87DATA\VSOP87A.ven" />
-    <None Remove="VSOP87DATA\VSOP87B.ear" />
-    <None Remove="VSOP87DATA\VSOP87B.jup" />
-    <None Remove="VSOP87DATA\VSOP87B.mar" />
-    <None Remove="VSOP87DATA\VSOP87B.mer" />
-    <None Remove="VSOP87DATA\VSOP87B.nep" />
-    <None Remove="VSOP87DATA\VSOP87B.sat" />
-    <None Remove="VSOP87DATA\VSOP87B.ura" />
-    <None Remove="VSOP87DATA\VSOP87B.ven" />
-    <None Remove="VSOP87DATA\VSOP87C.ear" />
-    <None Remove="VSOP87DATA\VSOP87C.jup" />
-    <None Remove="VSOP87DATA\VSOP87C.mar" />
-    <None Remove="VSOP87DATA\VSOP87C.mer" />
-    <None Remove="VSOP87DATA\VSOP87C.nep" />
-    <None Remove="VSOP87DATA\VSOP87C.sat" />
-    <None Remove="VSOP87DATA\VSOP87C.ura" />
-    <None Remove="VSOP87DATA\VSOP87C.ven" />
-    <None Remove="VSOP87DATA\VSOP87D.ear" />
-    <None Remove="VSOP87DATA\VSOP87D.jup" />
-    <None Remove="VSOP87DATA\VSOP87D.mar" />
-    <None Remove="VSOP87DATA\VSOP87D.mer" />
-    <None Remove="VSOP87DATA\VSOP87D.nep" />
-    <None Remove="VSOP87DATA\VSOP87D.sat" />
-    <None Remove="VSOP87DATA\VSOP87D.ura" />
-    <None Remove="VSOP87DATA\VSOP87D.ven" />
-    <None Remove="VSOP87DATA\VSOP87E.ear" />
-    <None Remove="VSOP87DATA\VSOP87E.jup" />
-    <None Remove="VSOP87DATA\VSOP87E.mar" />
-    <None Remove="VSOP87DATA\VSOP87E.mer" />
-    <None Remove="VSOP87DATA\VSOP87E.nep" />
-    <None Remove="VSOP87DATA\VSOP87E.sat" />
-    <None Remove="VSOP87DATA\VSOP87E.sun" />
-    <None Remove="VSOP87DATA\VSOP87E.ura" />
-    <None Remove="VSOP87DATA\VSOP87E.ven" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="VSOP87DATA\VSOP87.emb" />
     <EmbeddedResource Include="VSOP87DATA\VSOP87.jup" />
     <EmbeddedResource Include="VSOP87DATA\VSOP87.mar" />
@@ -112,6 +59,10 @@
     <EmbeddedResource Include="VSOP87DATA\VSOP87E.sun" />
     <EmbeddedResource Include="VSOP87DATA\VSOP87E.ura" />
     <EmbeddedResource Include="VSOP87DATA\VSOP87E.ven" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="2.5.124" />
   </ItemGroup>
 
   <ItemGroup>

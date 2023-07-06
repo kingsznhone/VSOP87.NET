@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using MessagePack;
 
 namespace VSOP87
 {
@@ -26,11 +27,10 @@ namespace VSOP87
         SATURN = 6,
         URANUS = 7,
         NEPTUNE = 8,
-        PLUTO =9, // Not exsist in VSOP87
-        EMB = 10
+        EMB = 9,
+        PLUTO = 10 // Not exsist in VSOP87
     }
 
-    [Serializable]
     public enum VSOPVersion
     {
         // 0: VSOP87 (initial solution).
@@ -88,63 +88,81 @@ namespace VSOP87
         VSOP87E = 5,
     }
 
+    [MessagePackObject]
     [Serializable]
     public struct PlanetTable
     {
+        [Key(0)]
         public VSOPVersion version;
+
+        [Key(1)]
         public VSOPBody body;
+
+        [Key(2)]
         public VariableTable[] variables;
     }
 
+    [MessagePackObject]
     [Serializable]
     public struct VariableTable
     {
+        [Key(0)]
         public VSOPVersion version;
+
+        [Key(1)]
         public VSOPBody body;
+
+        [Key(2)]
         public int ic;
+
+        [Key(3)]
         public PowerTable[] PowerTables;
     }
 
+    [MessagePackObject]
     [Serializable]
     public struct PowerTable
     {
+        [Key(0)]
         public VSOPVersion version;
+
+        [Key(1)]
         public VSOPBody body;
+
+        [Key(2)]
         public int ic;
+
+        [Key(3)]
         public int it;
+
+        [Key(4)]
         public Header header;
+
+        [Key(5)]
         public Term[] Terms;
     }
 
+    [MessagePackObject]
     [Serializable]
     public struct Header
     {
-        /// <summary>
-        /// VSOP87 version
-        /// </summary>
+        [Key(0)]
         public VSOPVersion Version;
 
-        /// <summary>
-        /// number of body
-        /// </summary>
+        [Key(1)]
         public VSOPBody body;
 
-        /// <summary>
-        /// index of coordinate
-        /// </summary>
+        [Key(2)]
         public int ic;
 
-        /// <summary>
-        /// degree alpha of time variable T
-        /// </summary>
+        [Key(3)]
         public int it;
 
-        /// <summary>
-        /// number of terms of series
-        /// </summary>
+        [Key(4)]
         public int nt;
     }
 
+    [MessagePackObject]
     [Serializable]
     [StructLayout(LayoutKind.Explicit)]
     public struct Term
@@ -152,24 +170,28 @@ namespace VSOP87
         /// <summary>
         /// rank of the term in a serie
         /// </summary>
+        [Key(0)]
         [FieldOffset(0)]
         public long rank;
 
         /// <summary>
         /// amplitude A
         /// </summary>
+        [Key(1)]
         [FieldOffset(8)]
         public double A;
 
         /// <summary>
         /// phase     B
         /// </summary>
+        [Key(2)]
         [FieldOffset(16)]
         public double B;
 
         /// <summary>
         /// frequency C
         /// </summary>
+        [Key(3)]
         [FieldOffset(24)]
         public double C;
     }
