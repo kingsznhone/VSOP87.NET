@@ -40,7 +40,7 @@ If anyone replace it with fast sincos funtion. this Algorithm will become much f
 
 * NuGet Package Manager
     ```
-    PM> NuGet\Install-Package VSOP87.NET -Version 1.1.2
+    PM> NuGet\Install-Package VSOP87.NET -Version 1.1.5
     ```
 
 ```
