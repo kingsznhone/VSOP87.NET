@@ -68,7 +68,7 @@ Console.WriteLine($"Coordinates Reference: {Enum.GetName(Result_LBR.CoordinatesR
 Console.WriteLine($"Reference Frame: {Enum.GetName(Result_LBR.ReferenceFrame)}");
 
 Console.WriteLine($"Time UTC: {Result_LBR.Time.UTC.ToString("o")}");
-Console.WriteLine($"Time UTC: {Result_LBR.Time.TDB.ToString("o")}");
+Console.WriteLine($"Time TDB: {Result_LBR.Time.TDB.ToString("o")}");
 Console.WriteLine("---------------------------------------------------------------");
 Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude (rad)", Result_LBR.l));
 Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude (rad)", Result_LBR.b));
@@ -81,6 +81,10 @@ Console.WriteLine("=============================================================
 ```
 
 # Change Log
+
+### V1.1.6 2023.07.07
+
+Bug fix.
 
 ### V1.1.5 2023.07.06
 
@@ -174,6 +178,9 @@ It's loaded into RAM when initiate VSOP calculator class
 <br>
 
 # Enviroment 
+
+.NET 6 Runtime Windows x64
+
 .NET 7 Runtime Windows x64
 
 <br>
@@ -182,9 +189,11 @@ It's loaded into RAM when initiate VSOP calculator class
 
 ## Class Calculator
 
-### Overview
-
 This Class provide double precision results.
+
+<br>
+
+#### Methods
 
 ###  ```VSOPResult Calculator.GetPlanetPosition(VSOPBody ibody, VSOPVersion iver, VSOPTime time)```
 
@@ -227,13 +236,13 @@ Wrapper of ```GetPlanetPosition```,but async.
 <br/>
 
 
-## Static Class Utility
-
-### Overview
+## Class Utility
 
 This Class Provide some useful function.
 
 <br/>
+
+#### Methods
 
 ### ```static List<VSOPBody> ListAvailableBody(VSOPVersion ver)```
 
@@ -473,9 +482,63 @@ Array of cartesian coordinate elements that inertial frame of dynamical equinox 
 
 ## Class VSOPResult_XYZ : VSOPResult
 
+#### Constructor
+
+### ``` public VSOPResult_XYZ(VSOPVersion version, VSOPBody body, VSOPTime time, double[] variables)```
+
+#### Arguments
+
+```version``` VSOPVersion
+
+version of this result from calculator.
+
+<br>
+
+```body``` VSOPBody
+
+Planet
+
+<br>
+
+```time``` VSOPTime
+
+Time wrapper for VSOP
+
+<br>
+
+```variables``` double[]
+
+Raw Data from calculator.
+
+<br>
+
+### ```VSOPResult_XYZ(VSOPResult_LBR result)```
+
+Create a new cartesian result from spherical result. 
+
+<br>
+
+#### Arguments
+
+```result``` VSOPResult_LBR 
+
+<br>
+
+### ```VSOPResult_XYZ(VSOPResult_ELL result)```
+
+Create a new Cartisian result from ellipitic result. 
+
+<br>
+
+#### Arguments
+
+```result``` VSOPResult_ELL
+
+<br>
+
 ### Properties
 
-```VSOPVersion Version { get; }```
+ ```VSOPVersion Version { get; }```
 
 VSOP version of this result.
 
@@ -487,21 +550,27 @@ Planet of this result.
 
 <br>
 
-```CoordinatesReference CoordinatesRefrence { get; }```
-
-Coordinates reference of this result.
-
-<br>
-
 ```CoordinatesType CoordinatesType { get; }```
 
 Coordinates type of this result.
 
 <br>
 
-```ReferenceFrame ReferenceFrame { get; }```
+```CoordinatesReference CoordinatesRefrence { get; }```
 
-Reference frame of this result.
+Coordinates reference of this result.
+
+<br>
+
+```ReferenceFrame ReferenceFrame { get; set;}```
+
+ReferenceFrame of this result. Set to ```ReferenceFrame.ICRSJ2000``` or ```ReferenceFrame.DynamicalJ2000``` will automatically change coordinate field. 
+
+'Dynamical frame of the date' is not supported.
+
+'Barycentric Coordinates' is not supported.
+
+'Elliptic Coordinates' is not supported.
 
 <br>
 
@@ -541,15 +610,49 @@ Velocity y (au/day)
 
 Velocity z (au/day)
 
-### Methods
+#### Methods
 
-```VSOPResult_LBR ToLBR()```
+### ```VSOPResult_LBR ToLBR()```
 
 Convert Result to Spherical coordinate.
 
 <br>
 
 ## Class VSOPResult_ELL : VSOPResult
+
+#### Constructor
+
+### ```public VSOPResult_ELL((VSOPVersion version, VSOPBody body, VSOPTime time, double[] ell)```
+
+Create a new spherical result from cartesian result. 
+
+<br>
+
+#### Arguments
+
+```version``` VSOPVersion
+
+version of this result from calculator.
+
+<br>
+
+```body``` VSOPBody
+
+Planet 
+
+<br>
+
+```time``` VSOPTime
+
+Time wrapper for VSOP
+
+<br>
+
+```ell``` double[]
+
+Raw result data from calculator.
+
+<br>
 
 ### Properties
 
@@ -565,15 +668,15 @@ Planet of this result.
 
 <br>
 
-```CoordinatesReference CoordinatesRefrence { get; }```
-
-Coordinates reference of this result.
-
-<br>
-
 ```CoordinatesType CoordinatesType { get; }```
 
 Coordinates type of this result.
+
+<br>
+
+```CoordinatesReference CoordinatesRefrence { get; }```
+
+Coordinates reference of this result.
 
 <br>
 
@@ -620,15 +723,15 @@ sin(i/2)*sin(omega) (rd)
 
 <br>
 
-### Methods
+#### Methods
 
-```VSOPResult_XYZ ToXYZ()```
+### ```VSOPResult_XYZ ToXYZ()```
 
 Convert Result to Cartesian coordinate.
 
 <br>
 
-```VSOPResult_LBR ToLBR()```
+### ```VSOPResult_LBR ToLBR()```
 
 Convert Result to Spherical coordinate.
 
@@ -636,6 +739,60 @@ Convert Result to Spherical coordinate.
 
 
 ## Class VSOPResult_LBR : VSOPResult
+
+#### Constructor
+
+### ``` public VSOPResult_LBR(VSOPVersion version, VSOPBody body, VSOPTime time, double[] variables)```
+
+#### Arguments
+
+```version``` VSOPVersion
+
+version of this result from calculator.
+
+<br>
+
+```body``` VSOPBody
+
+Planet
+
+<br>
+
+```time``` VSOPTime
+
+Time wrapper for VSOP
+
+<br>
+
+```variables``` double[]
+
+Raw Data from calculator.
+
+<br>
+
+### ```VSOPResult_LBR(VSOPResult_XYZ result)```
+
+Create a new spherical result from cartesian result. 
+
+<br>
+
+#### Arguments
+
+```result``` VSOPResult_XYZ 
+
+<br>
+
+### ```VSOPResult_XYZ(VSOPResult_ELL result)```
+
+Create a new Spherical result from ellipitic result. 
+
+<br>
+
+#### Arguments
+
+```result``` VSOPResult_ELL
+
+<br>
 
 ### Properties
 
@@ -651,21 +808,28 @@ Planet of this result.
 
 <br>
 
-```CoordinatesReference CoordinatesRefrence { get; }```
-
-Coordinates reference of this result.
-
-<br>
-
 ```CoordinatesType CoordinatesType { get; }```
 
 Coordinates type of this result.
 
 <br>
 
-```ReferenceFrame ReferenceFrame { get; }```
+```CoordinatesReference CoordinatesRefrence { get; }```
 
-Reference frame of this result.
+Coordinates reference of this result.
+
+<br>
+
+
+```ReferenceFrame ReferenceFrame { get; set;}```
+
+ReferenceFrame of this result. Set to ```ReferenceFrame.ICRSJ2000``` or ```ReferenceFrame.DynamicalJ2000``` will automatically change coordinate field. 
+
+'Dynamical frame of the date' is not supported.
+
+'Barycentric Coordinates' is not supported.
+
+'Elliptic Coordinates' is not supported.
 
 <br>
 
@@ -707,9 +871,9 @@ radius velocity (au/day)
 
 <br>
 
-### Methods
+#### Methods
 
-```VSOPResult_XYZ ToXYZ()```
+### ```VSOPResult_XYZ ToXYZ()```
 
 Convert Result to Cartesian coordinate.
 
@@ -725,7 +889,7 @@ This class provide time convert and management for VSOP87.
 
 #### Constructor
 
-```VSOPTime(DateTime dt, TimeFrame frame)```
+### ```VSOPTime(DateTime dt, TimeFrame frame)```
 
 Time to initialize VSOPTime.
 
@@ -736,12 +900,6 @@ Time to initialize VSOPTime.
 ```DateTime dt```
 
 time struct
-
-<br>
-
-```TTimeFrame frame```
-
-Time frame of ```dt```.
 
 <br>
 
@@ -769,9 +927,9 @@ Get Julian Date from TDB.
 
 <br>
 
-### Methods
+#### Methods
 
-```static DateTime ChangeFrame(DateTime dt, TimeFrame SourceFrame, TimeFrame TargetFrame)```
+### ```static DateTime ChangeFrame(DateTime dt, TimeFrame SourceFrame, TimeFrame TargetFrame)```
 
 #### Parameters
 
@@ -801,7 +959,8 @@ Datetime of target time Frame.
 
 <br>
 
-```static double ToJulianDate(DateTime dt)```
+### ```static double ToJulianDate(DateTime dt)```
+
 #### Parameters
 
 ```dt``` DateTime
@@ -818,7 +977,7 @@ Julian date.
 
 <br>
 
-```static DateTime FromJulianDate(double JD)```
+### ```static DateTime FromJulianDate(double JD)```
 
 #### Parameters
 

@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 using Demo;
 using VSOP87;
 
@@ -13,43 +11,21 @@ DateTime dt = DateTime.Now;
 //DateTime.TryParse(inputT, culture, style, out dt);
 //dt.ToUniversalTime();
 //dt = dt.AddSeconds(-69.184);
-VSOPTime vTime = new VSOPTime(dt,TimeFrame.UTC);
+VSOPTime vTime = new VSOPTime(dt, TimeFrame.UTC);
 Console.WriteLine(vTime.JulianDate);
 
-//double Diff_max = 0;
-//foreach (VSOPBody ib in Utility.ListAvailableBody(VSOPVersion.VSOP87))
-//{
-//    if (ib == VSOPBody.EMB) continue;
-//    var result = vsop.GetPlanetPosition(ib, VSOPVersion.VSOP87, vTime).Variables;
-//    var resultA = vsop.GetPlanetPosition(ib, VSOPVersion.VSOP87A, vTime).Variables;
-//    var Trans = Utility.ELLtoXYZ(ib,result);
-//    for (int i = 0;i< resultA.Length; i++)
-//    {
-//        double diff = Math.Abs(Trans[i] - resultA[i]);
-//        double diff_pct = Math.Abs(diff / resultA[i]);
-//        Diff_max = Math.Max(Diff_max, diff_pct);
-//        Debug.Assert(diff_pct < Math.Pow(10, -2));
-//        Debug.Assert(Trans[i] * resultA[i] > 0);
-//        Console.WriteLine($"{ib}-{i} to XYZ\t\t\tDIFF = {diff}\tpct{diff_pct:p2}");
-//    }
-//}
+//var results = vsop.GetPlanetPosition(VSOPBody.EMB, VSOPVersion.VSOP87, vTime);
+//FormattedPrint(results);
 
-//foreach (VSOPBody ib in Utility.ListAvailableBody(VSOPVersion.VSOP87A))
-//{
-//    if (ib == VSOPBody.EMB) continue;
-//    var resultC = vsop.GetPlanetPosition(ib, VSOPVersion.VSOP87A, vTime).Variables;
-//    var resultD = vsop.GetPlanetPosition(ib, VSOPVersion.VSOP87B, vTime).Variables;
-//    var Trans = Utility.XYZtoLBR(resultC);
-//    for (int i = 0; i < resultD.Length; i++)
-//    {
-//        double diff = Math.Abs(Trans[i] - resultD[i]);
-//        double diff_pct = Math.Abs(diff / resultD[i]);
-//        Diff_max = Math.Max(Diff_max, diff_pct);
-//        Debug.Assert(diff_pct  < Math.Pow(10, -2));
-//        Debug.Assert(Trans[i] * resultD[i] > 0);
-//        Console.WriteLine($"{ib}-{i} to LBR\t\t\tDIFF = {diff}\tpct{diff_pct:p2}");
-//    }
-//}
+//var xyz = (results as VSOPResult_ELL).ToXYZ();
+//FormattedPrint(xyz);
+//xyz.ReferenceFrame = ReferenceFrame.ICRSJ2000;
+//FormattedPrint(xyz);
+
+//var lbr = xyz.ToLBR();
+//FormattedPrint(lbr);
+//lbr.ReferenceFrame = ReferenceFrame.DynamicalJ2000;
+//FormattedPrint(lbr);
 
 foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
 {
@@ -59,8 +35,6 @@ foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
         FormattedPrint(results);
     }
 }
-
-
 
 Console.Write("Press Enter To Start Performance Test...");
 Console.ReadLine();
@@ -108,7 +82,6 @@ void FormattedPrint(VSOPResult Result)
             WriteColorLine("Coordinates Reference: ", ConsoleColor.Green, $"\tEquatorial Heliocentric");
             break;
     }
-
     switch (Result.ReferenceFrame)
 
     {

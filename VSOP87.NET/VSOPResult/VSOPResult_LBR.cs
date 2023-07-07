@@ -7,25 +7,7 @@
 
         private CoordinatesReference _coordinatesReference;
 
-        public override CoordinatesReference CoordinatesReference
-        {
-            get
-            {
-                if (_coordinatesReference == CoordinatesReference.EclipticBarycentric)
-                    return this._coordinatesReference;
-                else
-                {
-                    if (_referenceFrame == ReferenceFrame.DynamicalJ2000)
-                    {
-                        return CoordinatesReference.EclipticHeliocentric;
-                    }
-                    else
-                    {
-                        return CoordinatesReference.EquatorialHeliocentric;
-                    }
-                }
-            }
-        }
+        public override CoordinatesReference CoordinatesReference => _coordinatesReference;
 
         public override CoordinatesType CoordinatesType => CoordinatesType.Spherical;
 

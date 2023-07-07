@@ -7,25 +7,7 @@
 
         private CoordinatesReference _coordinatesReference;
 
-        public override CoordinatesReference CoordinatesReference
-        {
-            get
-            {
-                if (_coordinatesReference == CoordinatesReference.EclipticBarycentric)
-                    return this._coordinatesReference;
-                else
-                {
-                    if (_referenceFrame == ReferenceFrame.DynamicalJ2000)
-                    {
-                        return CoordinatesReference.EclipticHeliocentric;
-                    }
-                    else
-                    {
-                        return CoordinatesReference.EquatorialHeliocentric;
-                    }
-                }
-            }
-        }
+        public override CoordinatesReference CoordinatesReference => _coordinatesReference;
 
         public override CoordinatesType CoordinatesType => CoordinatesType.Rectangular;
 
@@ -44,13 +26,13 @@
                 {
                     throw new NotSupportedException("'Barycentric Coordinates' is not supported.");
                 }
-                if (_referenceFrame == ReferenceFrame.DynamicalJ2000)
+                if (_referenceFrame == ReferenceFrame.DynamicalJ2000 && value == ReferenceFrame.ICRSJ2000)
                 {
                     Variables = Utility.DynamicaltoICRS(Variables);
                     _referenceFrame = value;
                     _coordinatesReference = CoordinatesReference.EquatorialHeliocentric;
                 }
-                else if (_referenceFrame == ReferenceFrame.ICRSJ2000)
+                else if (_referenceFrame == ReferenceFrame.ICRSJ2000 && value == ReferenceFrame.DynamicalJ2000)
                 {
                     Variables = Utility.ICRStoDynamical(Variables);
                     _referenceFrame = ReferenceFrame.DynamicalJ2000;
