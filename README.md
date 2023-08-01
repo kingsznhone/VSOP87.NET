@@ -1,5 +1,8 @@
 # VSOP87.NET 
 
+[![NuGet package](https://img.shields.io/nuget/v/VSOP87.NET.svg?logo=NuGet)](https://www.nuget.org/packages/VSOP87.NET/)
+[![NuGet package](https://img.shields.io/nuget/dt/VSOP87.NET?logo=NuGet)](https://www.nuget.org/packages/VSOP87.NET/)
+
 ## What's this?
 
 VSOP was developed and is maintained (updated with the latest data) by the scientists at the Bureau des Longitudes in Paris. 
