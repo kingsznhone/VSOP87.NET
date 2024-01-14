@@ -1,6 +1,6 @@
-﻿using System.IO.Compression;
+﻿using MessagePack;
+using System.IO.Compression;
 using System.Reflection;
-using MessagePack;
 
 namespace VSOP87
 {
@@ -127,9 +127,7 @@ namespace VSOP87
 
         private void ModuloCircle(ref double RAD)
         {
-            RAD -= Math.Floor(RAD / Math.Tau) * Math.Tau;
-            if (RAD < 0)
-                RAD += Math.Tau;
+            RAD = (RAD % Math.Tau + Math.Tau) % Math.Tau;
         }
     }
 }

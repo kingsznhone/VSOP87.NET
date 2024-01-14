@@ -324,11 +324,10 @@ namespace VSOP87
             e = gl + (ex - 0.125d * ex3) * Math.Sin(gm)
                 + 0.5d * ex2 * Math.Sin(2.0d * gm)
                 + 0.375d * ex3 * Math.Sin(3.0d * gm);
-
-            z2 = new Complex(0d, e);
-            zteta = Complex.Exp(z2);
             while (true)
             {
+                z2 = new Complex(0d, e);
+                zteta = Complex.Exp(z2);
                 z3 = z1 * zteta;
                 dl = gl - e + z3.Imaginary;
                 rsa = 1.0d - z3.Real;

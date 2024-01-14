@@ -5,7 +5,7 @@ using VSOP87;
 namespace Demo
 {
     [SimpleJob(RuntimeMoniker.Net60)]
-    [SimpleJob(RuntimeMoniker.Net70)]
+    [SimpleJob(RuntimeMoniker.Net80)]
     [MemoryDiagnoser]
     public class PerfTest
     {
@@ -27,7 +27,7 @@ namespace Demo
         }
 
         [Benchmark]
-        public VSOPResult Go()
+        public VSOPResult Calculate()
         {
             var ell = vsop.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, vTime);
             return ell;

@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using MessagePack;
+﻿using MessagePack;
+using System.Runtime.InteropServices;
 
 namespace VSOP87
 {
