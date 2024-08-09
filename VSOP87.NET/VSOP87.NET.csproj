@@ -10,11 +10,13 @@
 	  <Authors>KingsZNHONE</Authors>
 	  <Description>VSOP was developed and is maintained (updated with the latest data) by the scientists at the Bureau des Longitudes in Paris.
 VSOP87, computed the positions of the planets directly at any moment, as well as their orbital elements with improved accuracy.</Description>
-	  <RepositoryUrl></RepositoryUrl>
+	  <RepositoryUrl>https://github.com/kingsznhone/VSOP87.NET</RepositoryUrl>
 	  <RepositoryType>git</RepositoryType>
 	  <PackageProjectUrl>https://github.com/kingsznhone/VSOP87.NET</PackageProjectUrl>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <Title>VSOP87.NET</Title>
+	  <PackageIcon>vsop87.png</PackageIcon>
+	  <PackageTags>vsop;</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,4 +32,11 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
 	  <PackageReference Include="MemoryPack" Version="1.21.1" />
   </ItemGroup>
 
+	<ItemGroup>
+		<None Include="vsop87.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 </Project>
