@@ -17,6 +17,8 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
 	  <Title>VSOP87.NET</Title>
 	  <PackageIcon>vsop87.png</PackageIcon>
 	  <PackageTags>vsop;</PackageTags>
+	  <IncludeSymbols>True</IncludeSymbols>
+	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
