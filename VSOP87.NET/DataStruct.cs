@@ -1,5 +1,5 @@
-﻿using MessagePack;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using MemoryPack;
 
 namespace VSOP87
 {
@@ -88,111 +88,83 @@ namespace VSOP87
         VSOP87E = 5,
     }
 
-    [MessagePackObject]
+    [MemoryPackable]
     [Serializable]
-    public struct PlanetTable
+    public partial struct PlanetTable
     {
-        [Key(0)]
         public VSOPVersion version;
 
-        [Key(1)]
         public VSOPBody body;
 
-        [Key(2)]
         public VariableTable[] variables;
     }
 
-    [MessagePackObject]
+    [MemoryPackable]
     [Serializable]
-    public struct VariableTable
+    public partial struct VariableTable
     {
-        [Key(0)]
         public VSOPVersion version;
 
-        [Key(1)]
         public VSOPBody body;
 
-        [Key(2)]
         public int ic;
 
-        [Key(3)]
         public PowerTable[] PowerTables;
     }
 
-    [MessagePackObject]
+    [MemoryPackable]
     [Serializable]
-    public struct PowerTable
+    public partial struct PowerTable
     {
-        [Key(0)]
         public VSOPVersion version;
 
-        [Key(1)]
         public VSOPBody body;
 
-        [Key(2)]
         public int ic;
 
-        [Key(3)]
         public int it;
 
-        [Key(4)]
         public Header header;
 
-        [Key(5)]
         public Term[] Terms;
     }
 
-    [MessagePackObject]
+    [MemoryPackable]
     [Serializable]
-    public struct Header
+    public partial struct Header
     {
-        [Key(0)]
         public VSOPVersion Version;
 
-        [Key(1)]
         public VSOPBody body;
 
-        [Key(2)]
         public int ic;
 
-        [Key(3)]
         public int it;
 
-        [Key(4)]
         public int nt;
     }
 
-    [MessagePackObject]
+    [MemoryPackable]
     [Serializable]
     [StructLayout(LayoutKind.Explicit)]
-    public struct Term
+    public partial struct Term
     {
-        /// <summary>
-        /// rank of the term in a serie
-        /// </summary>
-        [Key(0)]
-        [FieldOffset(0)]
-        public long rank;
-
         /// <summary>
         /// amplitude A
         /// </summary>
-        [Key(1)]
-        [FieldOffset(8)]
+        [FieldOffset(0)]
         public double A;
 
         /// <summary>
         /// phase     B
         /// </summary>
-        [Key(2)]
-        [FieldOffset(16)]
+        [FieldOffset(8)]
         public double B;
 
         /// <summary>
         /// frequency C
         /// </summary>
-        [Key(3)]
-        [FieldOffset(24)]
+        [FieldOffset(16)]
         public double C;
     }
 }
