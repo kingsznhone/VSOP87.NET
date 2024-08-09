@@ -11,32 +11,22 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
 
 Original VSOP87 Solution was write by FORTRAN 77 . It's too old to use. 
 
-Many Rewrite versions of VSOP87 is just a translation from FORTRAN. 
-
-This is the best VSOP87 library ever.
-
-The Hotspot of VSOP87 is located in 
-
-``` (su, cu) = Math.SinCos(u); ```
-
-Cost almost 90%+ CPU clocks.
-
-I use default sincos function to ensure precision.
-
-If anyone replace it with fast sincos funtion. this Algorithm will become much faster but less precision.
+This repo is not just programming language translation, it's refactoring of VSOP87.
 
 ## Features
 
 1. Use VSOPResult class to manage calculate results.
 2. Use VSOPTime class to manage time. 
 </br>Easy to convert time by calling ```VSOPTime.UTC```, ```VSOPTime.TAI```, ```VSOPTime.TDB```
-3. Veryhigh performance per solution
-![Performance Test](https://github.com/kingsznhone/VSOP87.NET/blob/master/PerformanceTest.png)
+
+3. Very high performance per solution using multithread.
+![Performance Test](./PerformanceTest.png)
+
 4. Useful Utility class. Such as checking planet available in specific version.
 5. Async Api 
-6. Use [MessagePack](https://github.com/neuecc/MessagePack-CSharp#lz4-compression"MessagePack for C#") for binary serialize.
+6. Use [MessagePack](https://github.com/neuecc/MessagePack-CSharp) for binary serialize.
 <br>Initialization time becomes less than 10% of previous.
-7. Brotli compression on source data. ~34Mb -> ~3MB with no precision lost.
+7. FastLZMA2 compression on source data. ~34Mb -> ~3MB with no data lost.
 <br>
 
 ## How to use
@@ -84,6 +74,16 @@ Console.WriteLine("=============================================================
 ```
 
 # Change Log
+### v1.2.0 2024.08.10
+**Beaking Change Warning**
+
+migrate serializer to memorypack.
+
+migrate data compress algorithm to FastLZMA2.
+
+performance improvement.
+
+.NET6&7 end of support.
 
 ### v1.1.7 2024.01.14 
 
@@ -122,8 +122,6 @@ function that convert ELL to XYZ is copy from VSOP2013.
 This is a magic function way beyond my math level.
 
 So I can't find how to inverse XYZ elements to ELL elements.
-
-Need help.
 
 ### V1.1.0 2023.07.02  
 Bug fix 
@@ -186,9 +184,7 @@ It's loaded into RAM when initiate VSOP calculator class
 
 # Enviroment 
 
-.NET 6 Runtime Windows x64
-
-.NET 7 Runtime Windows x64
+.NET 8 Runtime Windows x64
 
 <br>
 

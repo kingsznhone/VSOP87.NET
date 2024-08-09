@@ -74,7 +74,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VSOP87.NET\VSOP87.NET.csproj" />
+    <ProjectReference Include="..\VSOP87.NET\VSOP87.NET.csproj"/>
   </ItemGroup>
 
 </Project>
