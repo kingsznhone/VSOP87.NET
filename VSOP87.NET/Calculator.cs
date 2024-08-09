@@ -1,20 +1,23 @@
-﻿using MessagePack;
-using System.IO.Compression;
+﻿using FastLZMA2Net;
+using MemoryPack;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 
 namespace VSOP87
 {
     public class Calculator
     {
         public readonly List<PlanetTable> VSOP87DATA;
-
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Vector128<float> GetZero() => Vector128<float>.Zero;
         public Calculator()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            string datafilename = $"VSOP87.NET.Resources.VSOP87DATA.BIN";
-            using Stream s = assembly.GetManifestResourceStream(datafilename);
-            using BrotliStream bs = new(s, CompressionMode.Decompress);
-            VSOP87DATA = MessagePackSerializer.Deserialize<List<PlanetTable>>(bs);
+            using Stream s = assembly.GetManifestResourceStream($"VSOP87.NET.Resources.VSOP87DATA.BIN");
+            using var ms = new MemoryStream();
+            s.CopyTo(ms);
+            VSOP87DATA = MemoryPackSerializer.Deserialize<List<PlanetTable>>(FL2.Decompress(ms.ToArray()));
         }
 
         /// <summary>
@@ -61,9 +64,9 @@ namespace VSOP87
         /// <param name="TDB">Barycentric Dynamical Time</param>
         /// <returns>Result contain version, body, coordinates reference/type, time frame,and variables</returns>
         /// <exception cref="ArgumentException"></exception>
-        public async Task<VSOPResult> GetPlanetPositionAsync(VSOPBody ibody, VSOPVersion iver, VSOPTime time)
+        public Task<VSOPResult> GetPlanetPositionAsync(VSOPBody ibody, VSOPVersion iver, VSOPTime time)
         {
-            return await Task.Run(() => GetPlanetPosition(ibody, iver, time));
+            return Task.Run(() => GetPlanetPosition(ibody, iver, time));
         }
 
         /// <summary>
@@ -74,22 +77,30 @@ namespace VSOP87
         /// <returns></returns>
         private double[] Calculate(PlanetTable Planet, double JD)
         {
+
             double phi = (JD - 2451545.0d) / 365250d;
             Span<double> Result = stackalloc double[6];
             Span<double> t = stackalloc double[6];
+#if NET8_0
+            // Detail https://github.com/dotnet/runtime/issues/95954
+            _ = GetZero();
+#endif
             double cu, su;
             Term[] terms;
             for (int i = 0; i < 6; i++)
             {
                 t[i] = Math.Pow(phi, i);
             }
+
             for (int iv = 0; iv < 6; iv++)
             {
-                for (int it = 5; it >= 0; it--)
+
+                for (int it = 0; it <=5; it++)
                 {
                     if (Planet.variables[iv].PowerTables is null) continue;
                     if (Planet.variables[iv].PowerTables[it].Terms is null) continue;
                     terms = Planet.variables[iv].PowerTables[it].Terms;
+
                     for (int i = 0; i < terms.Length; i++)
                     {
                         (su, cu) = Math.SinCos(terms[i].B + terms[i].C * phi);

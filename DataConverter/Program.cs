@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
-using MessagePack;
-
+using MemoryPack;
+using FastLZMA2Net;
 namespace VSOP87
 {
     public class Program
@@ -56,6 +56,12 @@ namespace VSOP87
             Console.WriteLine($"Dump Data Reload Test OK. Elapsed: {milliseconds}ms");
             Console.WriteLine("Press Enter to exit...");
             Console.ReadLine();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = OutputDir.FullName,
+                UseShellExecute = true
+            });
         }
 
         private static PlanetTable ReadPlanet(string file)
@@ -111,40 +117,42 @@ namespace VSOP87
 
         private static Header ReadHeader(string line)
         {
+            ReadOnlySpan<char> lineSpan = line.AsSpan();
             Header H = new Header();
 
             int lineptr = 17;
-            H.Version = (VSOPVersion)Convert.ToInt32(line.Substring(lineptr, 1).Trim());
+            H.Version = (VSOPVersion)int.Parse(lineSpan[lineptr..(lineptr+1)].Trim());
             lineptr += 5;
 
-            H.body = (VSOPBody)Enum.Parse(typeof(VSOPBody), line.Substring(lineptr, 7).Trim());
+            H.body = (VSOPBody)Enum.Parse(typeof(VSOPBody), lineSpan[lineptr..(lineptr+7)].Trim());
             lineptr += 19;
 
-            H.ic = Convert.ToInt32(line.Substring(lineptr, 1).Trim()) - 1;
+            H.ic = int.Parse(lineSpan[lineptr..(lineptr+ 1)].Trim()) - 1;
             lineptr += 18;
 
-            H.it = Convert.ToInt32(line.Substring(lineptr, 1).Trim());
+            H.it = int.Parse(lineSpan[lineptr..(lineptr+ 1)].Trim());
             lineptr += 1;
 
-            H.nt = Convert.ToInt32(line.Substring(lineptr, 7).Trim());
+            H.nt = int.Parse(lineSpan[lineptr..(lineptr+7)].Trim());
             return H;
         }
 
         private static void ReadTerm(string line, ref Term T)
         {
+            ReadOnlySpan<char> lineSpan = line.AsSpan();
             int lineptr;
 
             lineptr = 5;
-            T.rank = Convert.ToInt32(line.Substring(lineptr, 5));
+            //T.rank = Convert.ToInt32(line.Substring(lineptr, 5));
             lineptr += 5 + 69;
 
-            T.A = Convert.ToDouble(line.Substring(lineptr, 18).Trim());
+            T.A = double.Parse(lineSpan[lineptr..(lineptr+ 18)].Trim());
             lineptr += 18;
 
-            T.B = Convert.ToDouble(line.Substring(lineptr, 14).Trim());
+            T.B = double.Parse(lineSpan[lineptr..(lineptr+ 14)].Trim());
             lineptr += 14;
 
-            T.C = Convert.ToDouble(line.Substring(lineptr, 20).Trim());
+            T.C = double.Parse(lineSpan[lineptr..(lineptr+ 20)].Trim());
         }
 
         private static void DumpData(DirectoryInfo dir, List<PlanetTable> VSOP87DATA)
@@ -156,17 +164,18 @@ namespace VSOP87
             }
 
             using FileStream fs = new(filename, FileMode.OpenOrCreate);
-            using BrotliStream bs = new(fs, CompressionLevel.SmallestSize);
-            MessagePackSerializer.Serialize(bs, VSOP87DATA);
-            Console.WriteLine(filename);
+            Compressor compressor = new Compressor(0, 10) { HighCompressLevel = 10 };
+            var data = compressor.Compress(MemoryPackSerializer.Serialize(VSOP87DATA));
+            fs.Write(data);
+            Console.WriteLine($"Data dump to {filename}");
         }
 
         private static List<PlanetTable> LoadData(DirectoryInfo dir)
         {
             string filename = Path.Combine(dir.FullName, "VSOP87DATA.BIN");
-            using FileStream fs = new(filename, FileMode.Open);
-            using BrotliStream bs = new(fs, CompressionMode.Decompress);
-            List<PlanetTable> tables = MessagePackSerializer.Deserialize<List<PlanetTable>>(bs);
+            Decompressor decompressor = new Decompressor();
+            var data = decompressor.Decompress(File.ReadAllBytes(filename));
+            List<PlanetTable> tables = MemoryPackSerializer.Deserialize<List<PlanetTable>>(data);
             if (tables is null) throw new Exception("Load Data Fail.");
             return tables;
         }

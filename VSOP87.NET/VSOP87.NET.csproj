@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
-	  <VersionPrefix>1.1.7</VersionPrefix>
+	  <VersionPrefix>1.2.0</VersionPrefix>
 	  <Authors>KingsZNHONE</Authors>
 	  <Description>VSOP was developed and is maintained (updated with the latest data) by the scientists at the Bureau des Longitudes in Paris.
 VSOP87, computed the positions of the planets directly at any moment, as well as their orbital elements with improved accuracy.</Description>
@@ -18,11 +18,6 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\example.f" />
-    <EmbeddedResource Include="Resources\ReadMe" />
-    <EmbeddedResource Include="Resources\vsop87.chk" />
-    <EmbeddedResource Include="Resources\vsop87.f" />
-    <EmbeddedResource Include="Resources\vsop87.txt" />
     <EmbeddedResource Include="Resources\VSOP87DATA.BIN" />
   </ItemGroup>
 
@@ -31,7 +26,8 @@ VSOP87, computed the positions of the planets directly at any moment, as well as
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="2.5.124" />
+	  <PackageReference Include="FastLZMA2Net" Version="0.6.0-beta" />
+	  <PackageReference Include="MemoryPack" Version="1.21.1" />
   </ItemGroup>
 
 </Project>
