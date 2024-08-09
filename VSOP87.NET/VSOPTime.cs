@@ -10,7 +10,7 @@
 
     public class VSOPTime
     {
-        private DateTime _dt { get; set; }
+        private readonly DateTime _dt;
 
         /// <summary>
         /// UTC:Coordinated Universal Time
@@ -35,20 +35,18 @@
         /// <summary>
         /// Get JD from TDB
         /// </summary>
-        public double JulianDate => VSOPTime.ToJulianDate(TDB);
+        public double JulianDate => ToJulianDate(TDB);
 
         private static List<Func<DateTime, DateTime>>
-            UpGradeFuncs = new List<Func<DateTime, DateTime>>(
-                new Func<DateTime, DateTime>[] { UTCtoTAI, TAItoTT, TTtoTDB });
+            UpGradeFuncs = new List<Func<DateTime, DateTime>>([UTCtoTAI, TAItoTT, TTtoTDB]);
 
         private static List<Func<DateTime, DateTime>>
-            DownGradeFuncs = new List<Func<DateTime, DateTime>>(
-                new Func<DateTime, DateTime>[] { TAItoUTC, TTtoTAI, TDBtoTT });
+            DownGradeFuncs = new List<Func<DateTime, DateTime>>([TAItoUTC, TTtoTAI, TDBtoTT]);
 
         public VSOPTime(DateTime dt, TimeFrame sourceframe)
         {
             _dt = ChangeFrame(dt, sourceframe, TimeFrame.UTC);
-            this._dt = _dt.ToUniversalTime();
+            _dt = _dt.ToUniversalTime();
         }
 
         /// <summary>

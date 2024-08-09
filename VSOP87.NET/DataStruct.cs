@@ -1,5 +1,5 @@
-﻿using MemoryPack;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using MemoryPack;
 
 namespace VSOP87
 {
@@ -90,7 +90,7 @@ namespace VSOP87
 
     [MemoryPackable]
     [Serializable]
-    public  partial struct PlanetTable
+    public partial struct PlanetTable
     {
         public VSOPVersion version;
 

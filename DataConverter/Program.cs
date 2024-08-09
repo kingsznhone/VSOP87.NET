@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
-using System.IO.Compression;
 using System.Reflection;
-using MemoryPack;
 using FastLZMA2Net;
+using MemoryPack;
+
 namespace VSOP87
 {
     public class Program
@@ -121,19 +121,19 @@ namespace VSOP87
             Header H = new Header();
 
             int lineptr = 17;
-            H.Version = (VSOPVersion)int.Parse(lineSpan[lineptr..(lineptr+1)].Trim());
+            H.Version = (VSOPVersion)int.Parse(lineSpan[lineptr..(lineptr + 1)].Trim());
             lineptr += 5;
 
-            H.body = (VSOPBody)Enum.Parse(typeof(VSOPBody), lineSpan[lineptr..(lineptr+7)].Trim());
+            H.body = (VSOPBody)Enum.Parse(typeof(VSOPBody), lineSpan[lineptr..(lineptr + 7)].Trim());
             lineptr += 19;
 
-            H.ic = int.Parse(lineSpan[lineptr..(lineptr+ 1)].Trim()) - 1;
+            H.ic = int.Parse(lineSpan[lineptr..(lineptr + 1)].Trim()) - 1;
             lineptr += 18;
 
-            H.it = int.Parse(lineSpan[lineptr..(lineptr+ 1)].Trim());
+            H.it = int.Parse(lineSpan[lineptr..(lineptr + 1)].Trim());
             lineptr += 1;
 
-            H.nt = int.Parse(lineSpan[lineptr..(lineptr+7)].Trim());
+            H.nt = int.Parse(lineSpan[lineptr..(lineptr + 7)].Trim());
             return H;
         }
 
@@ -146,13 +146,13 @@ namespace VSOP87
             //T.rank = Convert.ToInt32(line.Substring(lineptr, 5));
             lineptr += 5 + 69;
 
-            T.A = double.Parse(lineSpan[lineptr..(lineptr+ 18)].Trim());
+            T.A = double.Parse(lineSpan[lineptr..(lineptr + 18)].Trim());
             lineptr += 18;
 
-            T.B = double.Parse(lineSpan[lineptr..(lineptr+ 14)].Trim());
+            T.B = double.Parse(lineSpan[lineptr..(lineptr + 14)].Trim());
             lineptr += 14;
 
-            T.C = double.Parse(lineSpan[lineptr..(lineptr+ 20)].Trim());
+            T.C = double.Parse(lineSpan[lineptr..(lineptr + 20)].Trim());
         }
 
         private static void DumpData(DirectoryInfo dir, List<PlanetTable> VSOP87DATA)
