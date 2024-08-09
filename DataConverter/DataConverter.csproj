@@ -15,7 +15,6 @@
   <ItemGroup>
     
     <EmbeddedResource Include="Resources\VSOP87.emb" />
-    
     <EmbeddedResource Include="Resources\VSOP87.jup" />
     <EmbeddedResource Include="Resources\VSOP87.mar" />
     <EmbeddedResource Include="Resources\VSOP87.mer" />

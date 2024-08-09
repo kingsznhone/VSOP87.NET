@@ -41,7 +41,7 @@ using VSOP87;
 
 Calculator vsop = new Calculator();
 
-//Create VSOPTime using UTC .
+//Create VSOPTime using UTC, will auto trans to TDB in calculation.
 DateTime Tinput = DateTime.Now;
 VSOPTime vTime = new VSOPTime(Tinput.ToUniversalTime(),TimeFrame.UTC);
 
