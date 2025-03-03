@@ -35,6 +35,46 @@ foreach (VSOPVersion iv in Enum.GetValues(typeof(VSOPVersion)))
         FormattedPrint(results);
     }
 }
+var origin_XYZ = vsop.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87C, vTime).Variables;
+
+Console.WriteLine("origin XYZ Coordinates:");
+Console.WriteLine($"X: {origin_XYZ[0]}");
+Console.WriteLine($"Y: {origin_XYZ[1]}");
+Console.WriteLine($"Z: {origin_XYZ[2]}");
+Console.WriteLine($"dX: {origin_XYZ[3]}");
+Console.WriteLine($"dY: {origin_XYZ[4]}");
+Console.WriteLine($"dZ: {origin_XYZ[5]}");
+Console.WriteLine();
+var origin_LBR = vsop.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime).Variables;
+Console.WriteLine("origin LBR Coordinates:");
+Console.WriteLine($"L: {origin_LBR[0]}");
+Console.WriteLine($"B: {origin_LBR[1]}");
+Console.WriteLine($"R: {origin_LBR[2]}");
+Console.WriteLine($"dL: {origin_LBR[3]}");
+Console.WriteLine($"dB: {origin_LBR[4]}");
+Console.WriteLine($"dR: {origin_LBR[5]}");
+Console.WriteLine();
+
+double[] converted_XYZ = Utility.LBRtoXYZ(origin_LBR);
+Console.WriteLine("Converted XYZ Coordinates:");
+Console.WriteLine($"X: {converted_XYZ[0]}");
+Console.WriteLine($"Y: {converted_XYZ[1]}");
+Console.WriteLine($"Z: {converted_XYZ[2]}");
+Console.WriteLine($"dX: {converted_XYZ[3]}");
+Console.WriteLine($"dY: {converted_XYZ[4]}");
+Console.WriteLine($"dZ: {converted_XYZ[5]}");
+Console.WriteLine();
+
+double[] converted_LBR = Utility.XYZtoLBR(origin_XYZ);
+Console.WriteLine("Converted LBR Coordinates:");
+Console.WriteLine($"L: {converted_LBR[0]}");
+Console.WriteLine($"B: {converted_LBR[1]}");
+Console.WriteLine($"R: {converted_LBR[2]}");
+Console.WriteLine($"dL: {converted_LBR[3]}");
+Console.WriteLine($"dB: {converted_LBR[4]}");
+Console.WriteLine($"dR: {converted_LBR[5]}");
+Console.WriteLine();
+
 
 Console.Write("Press Enter To Start Performance Test...");
 Console.ReadLine();

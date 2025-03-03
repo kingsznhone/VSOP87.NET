@@ -185,6 +185,8 @@ namespace VSOP87
         /// </summary>
         /// <param name="xyz">x,y,z,dx,dy,dz</param>
         /// <returns>l,b,r,dl,db,dr</returns>
+        /// 
+        //Error in J_1
         public static double[] XYZtoLBR(double[] xyz)
         {
             Span<double> lbr = stackalloc double[6];
