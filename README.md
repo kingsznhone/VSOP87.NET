@@ -36,41 +36,66 @@ This repo is not just programming language translation, it's refactoring of VSOP
     PM> NuGet\Install-Package VSOP87.NET -Version 1.1.6
     ```
 
-```
+```csharp
+using System.Text.Json;
 using VSOP87;
 
 Calculator vsop = new Calculator();
 
-//Create VSOPTime using UTC, will auto trans to TDB in calculation.
-DateTime Tinput = DateTime.Now;
-VSOPTime vTime = new VSOPTime(Tinput.ToUniversalTime(),TimeFrame.UTC);
+// ── 1. Create VSOPTime (UTC input, auto-converts to TDB internally) ──────────
+VSOPTime vTime = new VSOPTime(DateTime.UtcNow, TimeFrame.UTC);
 
-//Calculate Earth's present position with VSOP version D
-var result=vsop.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
+// ── 2. Basic usage: VSOP87D → spherical (LBR) heliocentric, ecliptic of date ─
+VSOPResult_LBR lbr = (VSOPResult_LBR)vsop.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
 
-//VSOP version D Output LBR Coordinate.
-//Neet cast to LBR result
-VSOPResult_LBR Result_LBR = (VSOPResult_LBR)result;
-
-//Print result
-
-Console.WriteLine($"Version: {Enum.GetName(Result_LBR.Version)}");
-Console.WriteLine($"Body: {Enum.GetName(Result_LBR.Body)}");
-Console.WriteLine($"Coordinates Type: {Enum.GetName(Result_LBR.CoordinatesType)}");
-Console.WriteLine($"Coordinates Reference: {Enum.GetName(Result_LBR.CoordinatesReference)}");
-Console.WriteLine($"Reference Frame: {Enum.GetName(Result_LBR.ReferenceFrame)}");
-
-Console.WriteLine($"Time UTC: {Result_LBR.Time.UTC.ToString("o")}");
-Console.WriteLine($"Time TDB: {Result_LBR.Time.TDB.ToString("o")}");
+Console.WriteLine($"Body:              {lbr.Body}");
+Console.WriteLine($"Coordinates Type:  {lbr.CoordinatesType}");
+Console.WriteLine($"Frame:             {lbr.FrameType}");
+Console.WriteLine($"Epoch:             {lbr.Epoch}");
+Console.WriteLine($"Time UTC:          {lbr.Time.UTC:o}");
+Console.WriteLine($"Time TDB:          {lbr.Time.TDB:o}");
 Console.WriteLine("---------------------------------------------------------------");
-Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude (rad)", Result_LBR.l));
-Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude (rad)", Result_LBR.b));
-Console.WriteLine(String.Format("{0,-33}{1,30}", "radius (au)", Result_LBR.r));
-Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude velocity (rd/day)", Result_LBR.dl));
-Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude velocity (rd/day)", Result_LBR.db));
-Console.WriteLine(String.Format("{0,-33}{1,30}", "radius velocity (au/day)", Result_LBR.dr));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude (rad)",             lbr.l));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude (rad)",              lbr.b));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "radius (au)",                 lbr.r));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "longitude velocity (rad/day)", lbr.dl));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "latitude velocity (rad/day)",  lbr.db));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "radius velocity (au/day)",     lbr.dr));
 Console.WriteLine("===============================================================");
 
+// ── 3. Coordinate-type conversions (frame & epoch are preserved) ─────────────
+VSOPResult_XYZ xyz = lbr.ToXYZ();   // spherical → cartesian
+VSOPResult_ELL ell = lbr.ToELL();   // spherical → elliptic elements
+
+// ── 4. Epoch conversion: ecliptic of date → fixed J2000 ──────────────────────
+VSOPResult_LBR lbr_j2000 = (VSOPResult_LBR)lbr.ChangeEpoch(Epoch.J2000);
+
+// ── 5. Frame conversion: Dynamical → ICRS equatorial ─────────────────────────
+//    (Calculator instance is required for Barycentric conversions)
+VSOPResult_LBR lbr_icrs = (VSOPResult_LBR)lbr.ChangeFrame(FrameType.ICRS, vsop);
+
+// ── 6. VSOP87A → cartesian (XYZ) heliocentric, dynamical J2000 ───────────────
+VSOPResult_XYZ xyz_a = (VSOPResult_XYZ)vsop.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87A, vTime);
+
+// Convert to barycentric (requires VSOP87E Sun data internally)
+VSOPResult_XYZ xyz_bary = (VSOPResult_XYZ)xyz_a.ChangeFrame(FrameType.Barycentric, vsop);
+
+// ── 7. VSOP87 → elliptic orbital elements ────────────────────────────────────
+VSOPResult_ELL ell_emb = (VSOPResult_ELL)vsop.GetPlanetPosition(VSOPBody.EMB, VSOPVersion.VSOP87, vTime);
+
+Console.WriteLine(String.Format("{0,-33}{1,30}", "semi-major axis (au)",          ell_emb.a));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "mean longitude (rad)",           ell_emb.l));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "k = e*cos(pi)",                  ell_emb.k));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "h = e*sin(pi)",                  ell_emb.h));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "q = sin(i/2)*cos(omega)",        ell_emb.q));
+Console.WriteLine(String.Format("{0,-33}{1,30}", "p = sin(i/2)*sin(omega)",        ell_emb.p));
+
+// ── 8. Async API ──────────────────────────────────────────────────────────────
+VSOPResult result = await vsop.GetPlanetPositionAsync(VSOPBody.JUPITER, VSOPVersion.VSOP87B, vTime);
+
+// ── 9. JSON serialization (System.Text.Json, polymorphic) ────────────────────
+string json = JsonSerializer.Serialize(lbr, new JsonSerializerOptions { WriteIndented = true });
+Console.WriteLine(json);
 ```
 
 # Change Log
