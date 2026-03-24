@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+	<PlatformTarget>AnyCPU</PlatformTarget>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<Version>2.0.0</Version>
+	<Title>VSOP87.NET</Title>
+	<Authors>KingsZNHONE</Authors>
+	<Copyright>Copyright © 2024 KingsZNHONE</Copyright>
+	<Description>VSOP was developed and is maintained (updated with the latest data) by the scientists at the Bureau des Longitudes in Paris.
+VSOP87, computed the positions of the planets directly at any moment, as well as their orbital elements with improved accuracy.</Description>
+	<RepositoryUrl>https://github.com/kingsznhone/VSOP87.NET</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
+	<PackageProjectUrl>https://github.com/kingsznhone/VSOP87.NET</PackageProjectUrl>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<IncludeSymbols>True</IncludeSymbols>
+	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	<PackageIcon>vsop87.png</PackageIcon>
+	<PackageTags>vsop;vsop87;astronomy;ephemeris;planetary;orbital-mechanics;astrodynamics;solar-system</PackageTags>
+	<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+	<Platforms>AnyCPU</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<None Remove="Resources\VSOP87.BR" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<Content Include="Resources\VSOP87.BR">
+	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <TargetPath>VSOP87.BR</TargetPath>
+	  <Pack>true</Pack>
+	  <PackagePath>contentFiles\any\any\</PackagePath>
+	  <PackageCopyToOutput>true</PackageCopyToOutput>
+	  <PackageFlatten>true</PackageFlatten>
+	</Content>
+  </ItemGroup>
+
+  <ItemGroup>
+	<PackageReference Include="MemoryPack" Version="1.21.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<None Include="..\LICENSE">
+	  <Pack>True</Pack>
+	  <PackagePath>\</PackagePath>
+	</None>
+	<None Include="vsop87.png">
+	  <Pack>True</Pack>
+	  <PackagePath>\</PackagePath>
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
+  </ItemGroup>
+
+</Project>

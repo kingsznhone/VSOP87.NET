@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="DataConverter/DataConverter.csproj" />
+  <Project Path="Demo/Demo.csproj" />
+  <Project Path="VSOP87.NET/VSOP87.NET.csproj"/>
+</Solution>
