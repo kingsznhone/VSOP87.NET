@@ -26,7 +26,7 @@ This repo is not just programming language translation, it's refactoring of VSOP
 5. Async Api 
 6. Use [MessagePack](https://github.com/neuecc/MessagePack-CSharp) for binary serialize.
 <br>Initialization time becomes less than 10% of previous.
-7. FastLZMA2 compression on source data. ~34Mb -> ~3MB with no data lost.
+7. Brotli compression on source data. ~34Mb -> ~3MB with no data lost.
 <br>
 
 ## How to use
