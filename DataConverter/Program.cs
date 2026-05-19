@@ -1,7 +1,6 @@
 ﻿using MemoryPack;
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Reflection;
 
 namespace VSOP87
 {
@@ -14,7 +13,8 @@ namespace VSOP87
             /// </summary>
             List<PlanetTable> VSOP87DATA = new List<PlanetTable>();
 
-            string[] ResourceFiles = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            string resourcesDir = Path.Combine(AppContext.BaseDirectory, "Resources");
+            string[] ResourceFiles = Directory.GetFiles(resourcesDir);
 
             Stopwatch sw = new();
             sw.Restart();
@@ -69,9 +69,9 @@ namespace VSOP87
             string[] Extensions = { @"sun", @"mer", @"ven", @"ear", @"mar", @"jup", @"sat", @"ura", @"nep", @"emb" };
 
             //parse filepath
-
-            VSOPVersion iver = (VSOPVersion)Enum.Parse(typeof(VSOPVersion), file.Split(".")[2]);
-            VSOPBody ibody = (VSOPBody)Extensions.ToList().IndexOf(file.Split(".")[3]);
+            string filename = Path.GetFileName(file);
+            VSOPVersion iver = (VSOPVersion)Enum.Parse(typeof(VSOPVersion), filename.Split(".")[0]);
+            VSOPBody ibody = (VSOPBody)Extensions.ToList().IndexOf(filename.Split(".")[1]);
 
             //create an empty dataset
             PlanetTable planetdata = new PlanetTable();
@@ -81,7 +81,7 @@ namespace VSOP87
 
             Header H;
             string line;
-            using (Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream(file))
+            using (Stream s = File.OpenRead(file))
             {
                 using (StreamReader sr = new StreamReader(s))
                 {
