@@ -1,7 +1,7 @@
 namespace VSOP87.Tests;
 
 /// <summary>
-/// Public API behavior of <see cref="Calculator"/> and <see cref="CalculatorF"/>: construction, results, secular terms and threading.
+/// Public API behavior of <see cref="Calculator"/>: construction, precision modes, results, secular terms and threading.
 /// </summary>
 [TestClass]
 public class CalculatorTests
@@ -35,13 +35,72 @@ public class CalculatorTests
     {
         VSOPTime time = _times[2];
         Assert.ThrowsExactly<ArgumentException>(() => _full.GetPlanetPosition(body, version, time));
-        Assert.ThrowsExactly<ArgumentException>(() => new CalculatorF(SimdMode.Scalar).GetPlanetPosition(body, version, time));
+        Assert.ThrowsExactly<ArgumentException>(() => new Calculator(SimdMode.Scalar, PrecisionMode.UltraFast).GetPlanetPosition(body, version, time));
     }
+
+    [TestMethod]
+    public void InvalidPrecisionThrows()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new Calculator(SimdMode.Scalar, (PrecisionMode)42));
+    }
+
+    [TestMethod]
+    public void TruncatedModesKeepFewerTerms()
+    {
+        int full = new Calculator(SimdMode.Scalar, PrecisionMode.Full).PeriodicTermCount;
+        int fast = new Calculator(SimdMode.Scalar, PrecisionMode.Fast).PeriodicTermCount;
+        int ultraFast = new Calculator(SimdMode.Scalar, PrecisionMode.UltraFast).PeriodicTermCount;
+
+        Assert.AreEqual(269163, full);
+        Assert.IsTrue(fast < full && ultraFast < fast, $"Full {full}, Fast {fast}, UltraFast {ultraFast}");
+    }
+
+    /// <summary>
+    /// Strict truncation: over +-1000 years every value stays within its budget of the full series, and every rate within the same value per day.
+    /// </summary>
+    [TestMethod]
+    [DataRow(PrecisionMode.Fast)]
+    [DataRow(PrecisionMode.UltraFast)]
+    public void TruncationErrorIsWithinBudget(PrecisionMode precision)
+    {
+        const int Samples = 101;
+        Calculator truncated = new(SimdMode.Auto, precision);
+        double tolerance = VSOPData.ToleranceArcsec(precision);
+        double worstRatio = 0d;
+        System.Text.StringBuilder failures = new();
+        foreach ((VSOPVersion version, VSOPBody body) in TestData.AllPairs())
+        {
+            for (int s = 0; s < Samples; s++)
+            {
+                VSOPTime time = new(TestData.J2000.AddDays(-365250d + 730500d * s / (Samples - 1)), TimeFrame.TDB);
+                ReadOnlySpan<double> expected = _full.GetPlanetPosition(body, version, time).Variables;
+                ReadOnlySpan<double> actual = truncated.GetPlanetPosition(body, version, time).Variables;
+                for (int i = 0; i < 6; i++)
+                {
+                    // Slots 3..5 of the rectangular/spherical versions are the rates of variables 0..2.
+                    int variable = version == VSOPVersion.VSOP87 ? i : i % 3;
+                    double budget = VSOPData.Budget(version, body, variable, tolerance);
+                    double diff = TestData.Diff(version, i, expected[i], actual[i]);
+                    worstRatio = Math.Max(worstRatio, diff / budget);
+                    // Small slack for the rounding of the two evaluations.
+                    if (diff > budget * (1 + 1e-9) + 1e-14)
+                    {
+                        failures.AppendLine($"{version} {body} {time.TDB:yyyy-MM-dd} [{i}]: diff {diff:E3}, budget {budget:E3}");
+                    }
+                }
+            }
+        }
+        TestContext.WriteLine($"{precision}: worst error / budget = {worstRatio:F3}");
+
+        Assert.AreEqual(0, failures.Length, failures.ToString());
+    }
+
+    public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
     public void ResultsCarryVersionMetadata()
     {
-        CalculatorF fast = new();
+        Calculator fast = new(SimdMode.Auto, PrecisionMode.UltraFast);
         foreach ((VSOPVersion version, VSOPBody body) in TestData.AllPairs())
         {
             foreach (VSOPResult result in new[] { _full.GetPlanetPosition(body, version, _times[3]), fast.GetPlanetPosition(body, version, _times[3]) })
@@ -162,16 +221,11 @@ public class CalculatorTests
     [TestMethod]
     public async Task AsyncMatchesSync()
     {
-        CalculatorF fast = new();
         VSOPTime time = _times[3];
 
         VSOPResult expected = _full.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, time);
         VSOPResult actual = await _full.GetPlanetPositionAsync(VSOPBody.JUPITER, VSOPVersion.VSOP87D, time);
         CollectionAssert.AreEqual(expected.Variables.ToArray(), actual.Variables.ToArray());
-
-        VSOPResult expectedF = fast.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, time);
-        VSOPResult actualF = await fast.GetPlanetPositionAsync(VSOPBody.JUPITER, VSOPVersion.VSOP87D, time);
-        CollectionAssert.AreEqual(expectedF.Variables.ToArray(), actualF.Variables.ToArray());
     }
 
     [TestMethod]

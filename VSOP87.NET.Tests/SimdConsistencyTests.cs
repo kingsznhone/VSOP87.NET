@@ -11,47 +11,37 @@ public class SimdConsistencyTests
 {
     private const double Tolerance = 1e-12;
 
-    // Float paths sum in a different order; coordinates reach ~30 au (float ulp ~2e-6) and sums span ~1e3 terms.
-    private const double FloatTolerance = 1e-4;
-
     private static readonly int[] _years = [1000, 1600, 1900, 2000, 2024, 2100, 2500, 3000];
 
     public static IEnumerable<object[]> SimdModes()
     {
-        if (Vector128.IsHardwareAccelerated)
+        foreach (PrecisionMode precision in Enum.GetValues<PrecisionMode>())
         {
-            yield return [SimdMode.Vector128];
-        }
-        if (Vector256.IsHardwareAccelerated)
-        {
-            yield return [SimdMode.Vector256];
-        }
-        if (Vector512.IsHardwareAccelerated)
-        {
-            yield return [SimdMode.Vector512];
+            if (Vector128.IsHardwareAccelerated)
+            {
+                yield return [SimdMode.Vector128, precision];
+            }
+            if (Vector256.IsHardwareAccelerated)
+            {
+                yield return [SimdMode.Vector256, precision];
+            }
+            if (Vector512.IsHardwareAccelerated)
+            {
+                yield return [SimdMode.Vector512, precision];
+            }
         }
     }
 
     [TestMethod]
     [DynamicData(nameof(SimdModes))]
-    public void DoubleSimdMatchesScalar(SimdMode mode)
+    public void SimdMatchesScalar(SimdMode mode, PrecisionMode precision)
     {
-        Calculator scalar = new(SimdMode.Scalar);
-        Calculator simd = new(mode);
+        Calculator scalar = new(SimdMode.Scalar, precision);
+        Calculator simd = new(mode, precision);
         Assert.AreEqual(mode, simd.Mode);
+        Assert.AreEqual(precision, simd.Precision);
 
-        Compare((b, v, t) => scalar.GetPlanetPosition(b, v, t), (b, v, t) => simd.GetPlanetPosition(b, v, t), Tolerance, mode.ToString());
-    }
-
-    [TestMethod]
-    [DynamicData(nameof(SimdModes))]
-    public void FloatSimdMatchesScalar(SimdMode mode)
-    {
-        CalculatorF scalar = new(SimdMode.Scalar);
-        CalculatorF simd = new(mode);
-        Assert.AreEqual(mode, simd.Mode);
-
-        Compare((b, v, t) => scalar.GetPlanetPosition(b, v, t), (b, v, t) => simd.GetPlanetPosition(b, v, t), FloatTolerance, $"{mode} (float)");
+        Compare((b, v, t) => scalar.GetPlanetPosition(b, v, t), (b, v, t) => simd.GetPlanetPosition(b, v, t), Tolerance, $"{mode} {precision}");
     }
 
     [TestMethod]
@@ -63,7 +53,7 @@ public class SimdConsistencyTests
             : SimdMode.Scalar;
 
         Assert.AreEqual(expected, new Calculator().Mode);
-        Assert.AreEqual(expected, new CalculatorF().Mode);
+        Assert.AreEqual(PrecisionMode.Full, new Calculator().Precision);
     }
 
     private static void Compare(

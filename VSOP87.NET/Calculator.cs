@@ -5,11 +5,54 @@ using System.Runtime.Intrinsics;
 namespace VSOP87
 {
     /// <summary>
-    /// Full precision VSOP87 calculator (double precision, reproduces the official VSOP87.chk values).
+    /// Selects the vector width used by <see cref="Calculator"/> to evaluate the series.
+    /// </summary>
+    public enum SimdMode
+    {
+        /// <summary>Pick the widest hardware-accelerated width available.</summary>
+        Auto = 0,
+
+        /// <summary>Scalar evaluation only.</summary>
+        Scalar = 1,
+
+        /// <summary>128-bit vectors (2 doubles).</summary>
+        Vector128 = 2,
+
+        /// <summary>256-bit vectors (4 doubles).</summary>
+        Vector256 = 3,
+
+        /// <summary>512-bit vectors (8 doubles).</summary>
+        Vector512 = 4,
+    }
+
+    /// <summary>
+    /// Selects how much of the series <see cref="Calculator"/> evaluates.
+    /// </summary>
+    /// <remarks>
+    /// Truncated modes drop the periodic terms with the smallest worst-case contribution, as long as the sum of the
+    /// dropped contributions stays within the budget, so the error added by truncation is guaranteed for |t - J2000| &lt;= 1000 years.
+    /// The budget follows the VSOP87 precision convention: the tolerance in radians for angles and k/h/q/p,
+    /// the tolerance times the semi-major axis a0 in au for distances and rectangular coordinates,
+    /// and the same values per day for the rates.
+    /// </remarks>
+    public enum PrecisionMode
+    {
+        /// <summary>Full series; reproduces the official VSOP87.chk values.</summary>
+        Full = 0,
+
+        /// <summary>Truncation error at most 1 arcsecond (about the precision of the VSOP87 theory itself).</summary>
+        Fast = 1,
+
+        /// <summary>Truncation error at most 10 arcseconds, for visualization.</summary>
+        UltraFast = 2,
+    }
+
+    /// <summary>
+    /// VSOP87 calculator (double precision). <see cref="PrecisionMode.Full"/> reproduces the official VSOP87.chk values;
+    /// <see cref="PrecisionMode.Fast"/> and <see cref="PrecisionMode.UltraFast"/> drop terms with a guaranteed error bound.
     /// </summary>
     /// <remarks>
     /// Instances are read-only after construction and safe to share across threads.
-    /// For fast, low precision visualization use <see cref="CalculatorF"/>.
     /// </remarks>
     public class Calculator
     {
@@ -54,6 +97,16 @@ namespace VSOP87
         public SimdMode Mode { get; }
 
         /// <summary>
+        /// How much of the series is evaluated.
+        /// </summary>
+        public PrecisionMode Precision { get; }
+
+        /// <summary>
+        /// Number of periodic terms kept (without SIMD padding), for diagnostics.
+        /// </summary>
+        internal int PeriodicTermCount { get; }
+
+        /// <summary>
         /// Creates a full precision calculator with the widest accelerated vector width.
         /// </summary>
         public Calculator() : this(SimdMode.Auto)
@@ -61,13 +114,20 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// Creates a calculator using the specified vector width. The full series is always evaluated.
+        /// Creates a calculator using the specified vector width and precision.
         /// </summary>
         /// <param name="mode">Vector width; <see cref="SimdMode.Auto"/> picks the widest accelerated width.</param>
+        /// <param name="precision">
+        /// <see cref="PrecisionMode.Full"/> (default) evaluates the full series. <see cref="PrecisionMode.Fast"/> (1")
+        /// and <see cref="PrecisionMode.UltraFast"/> (10") drop terms while bounding the truncation error for |t - J2000| &lt;= 1000 years.
+        /// </param>
         /// <exception cref="PlatformNotSupportedException">The requested width is not hardware accelerated.</exception>
-        public Calculator(SimdMode mode)
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="precision"/> is not a defined value.</exception>
+        public Calculator(SimdMode mode, PrecisionMode precision = PrecisionMode.Full)
         {
             Mode = VSOPData.ResolveMode(mode);
+            Precision = precision;
+            double tolerance = VSOPData.ToleranceArcsec(precision);
             _lanes = Mode switch
             {
                 SimdMode.Vector512 => Vector512<double>.Count,
@@ -78,9 +138,11 @@ namespace VSOP87
 
             // Term[] is only needed while building the SoA; it is dropped afterwards.
             _tables = new VariableSoA[]?[VSOPData.VersionCount * VSOPData.BodyCount];
+            int termCount = 0;
             foreach (PlanetTable planet in VSOPData.Load())
             {
                 int variableCount = planet.Version == VSOPVersion.VSOP87 ? 6 : 3;
+                bool withRate = planet.Version != VSOPVersion.VSOP87;
                 VariableSoA[] variables = new VariableSoA[variableCount];
                 for (int iv = 0; iv < variableCount; iv++)
                 {
@@ -89,27 +151,26 @@ namespace VSOP87
                         : [];
                     double[] secular = new double[powers.Length];
                     double[] secularLo = new double[powers.Length];
-                    PowerSoA?[] periodic = new PowerSoA?[powers.Length];
+                    Term[][] periodic = new Term[powers.Length][];
                     for (int it = 0; it < powers.Length; it++)
                     {
-                        periodic[it] = BuildSoA(powers[it], it, secular, secularLo);
+                        periodic[it] = VSOPData.SplitSecular(powers[it]?.Terms ?? [], it, secular, secularLo);
                     }
-                    variables[iv] = new VariableSoA(periodic, secular, secularLo);
+
+                    double budget = VSOPData.Budget(planet.Version, planet.Body, iv, tolerance);
+                    periodic = VSOPData.Truncate(periodic, budget, withRate);
+                    termCount += periodic.Sum(p => p.Length);
+                    variables[iv] = new VariableSoA(Array.ConvertAll(periodic, BuildSoA), secular, secularLo);
                 }
                 _tables[Index(planet.Version, planet.Body)] = variables;
             }
+            PeriodicTermCount = termCount;
         }
 
         private static int Index(VSOPVersion version, VSOPBody body) => (int)version * VSOPData.BodyCount + (int)body;
 
-        private PowerSoA? BuildSoA(PowerTable? power, int it, double[] secular, double[] secularLo)
+        private PowerSoA? BuildSoA(Term[] terms)
         {
-            if (power?.Terms is not { Length: > 0 } source)
-            {
-                return null;
-            }
-
-            Term[] terms = VSOPData.SplitSecular(source, it, secular, secularLo);
             if (terms.Length == 0)
             {
                 return null;

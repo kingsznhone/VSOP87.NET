@@ -1,4 +1,3 @@
-using System.Runtime.Intrinsics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
@@ -7,61 +6,48 @@ using VSOP87;
 namespace Demo
 {
     /// <summary>
-    /// GetPlanetPosition(JUPITER, VSOP87D) for {Scalar, widest SIMD} x {Calculator (double), CalculatorF (float)}.
-    /// Ratios are computed against the double calculator within the same SIMD mode.
+    /// GetPlanetPosition(JUPITER, VSOP87D) for {Scalar, Vector256} x {Full, Fast (1"), UltraFast (10")}.
+    /// Ratios are computed against the full series within the same SIMD mode.
     /// </summary>
     [SimpleJob(RuntimeMoniker.Net10_0)]
     [MemoryDiagnoser]
     [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByParams)]
     public class PerfTest
     {
-        private Calculator _double = null!;
-        private CalculatorF _float = null!;
+        private Calculator _full = null!;
+        private Calculator _fast = null!;
+        private Calculator _ultraFast = null!;
 
         private VSOPTime _vTime = null!;
 
-        [ParamsSource(nameof(Modes))]
+        [Params(SimdMode.Scalar, SimdMode.Vector256)]
         public SimdMode Mode { get; set; }
-
-        /// <summary>
-        /// Scalar and the widest hardware-accelerated width of this machine.
-        /// </summary>
-        public static IEnumerable<SimdMode> Modes()
-        {
-            yield return SimdMode.Scalar;
-            if (Vector512.IsHardwareAccelerated)
-            {
-                yield return SimdMode.Vector512;
-            }
-            else if (Vector256.IsHardwareAccelerated)
-            {
-                yield return SimdMode.Vector256;
-            }
-            else if (Vector128.IsHardwareAccelerated)
-            {
-                yield return SimdMode.Vector128;
-            }
-        }
 
         [GlobalSetup]
         public void Init()
         {
-            // Both calculators evaluate the full series.
-            _double = new Calculator(Mode);
-            _float = new CalculatorF(Mode);
+            _full = new Calculator(Mode, PrecisionMode.Full);
+            _fast = new Calculator(Mode, PrecisionMode.Fast);
+            _ultraFast = new Calculator(Mode, PrecisionMode.UltraFast);
             _vTime = new VSOPTime(DateTime.UtcNow, TimeFrame.UTC);
         }
 
         [Benchmark(Baseline = true)]
-        public VSOPResult Double()
+        public VSOPResult Full()
         {
-            return _double.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, _vTime);
+            return _full.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, _vTime);
         }
 
         [Benchmark]
-        public VSOPResult Float()
+        public VSOPResult Fast()
         {
-            return _float.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, _vTime);
+            return _fast.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, _vTime);
+        }
+
+        [Benchmark]
+        public VSOPResult UltraFast()
+        {
+            return _ultraFast.GetPlanetPosition(VSOPBody.JUPITER, VSOPVersion.VSOP87D, _vTime);
         }
     }
 }

@@ -21,14 +21,18 @@ This repo is not just programming language translation, it's refactoring of VSOP
 
 3. SIMD accelerated series evaluation (`Vector128` / `Vector256` / `Vector512` vectorized `SinCos`) on SoA term tables, with automatic hardware detection.
 
-    `GetPlanetPosition(JUPITER, VSOP87D)`, full series:
+    `GetPlanetPosition(JUPITER, VSOP87D)`:
 
-    | Calculator             | Scalar   | Vector256 |
-    |------------------------|---------:|----------:|
-    | `Calculator` (double)  | 41.9 µs  | 9.19 µs   |
-    | `CalculatorF` (float)  | 45.1 µs  | 7.03 µs   |
+    | Precision              | SIMD      | Mean     | vs Full Scalar |
+    |------------------------|-----------|---------:|---------------:|
+    | `Full`                 | Scalar    | 41.8 µs  | 1.00× (1×)     |
+    | `Fast` (≤ 1″)          | Scalar    | 10.4 µs  | 0.25× (4.0×)   |
+    | `UltraFast` (≤ 10″)    | Scalar    | 2.49 µs  | 0.060× (16.8×) |
+    | `Full`                 | Vector256 | 9.26 µs  | 0.22× (4.5×)   |
+    | `Fast` (≤ 1″)          | Vector256 | 2.85 µs  | 0.068× (14.7×) |
+    | `UltraFast` (≤ 10″)    | Vector256 | 0.854 µs | 0.020× (49.0×) |
 
-4. `CalculatorF`: single precision approximation for visualization (see [Precision](#precision)).
+4. Precision modes with a guaranteed error bound: `Fast` (≤ 1″) and `UltraFast` (≤ 10″) drop terms at load time (see [Precision](#precision)).
 5. Useful Utility class. Such as checking planet available in specific version.
 6. Async Api 
 7. Use [MemoryPack](https://github.com/Cysharp/MemoryPack) for binary serialize.
@@ -104,14 +108,12 @@ VSOPResult result = await vsop.GetPlanetPositionAsync(VSOPBody.JUPITER, VSOPVers
 string json = JsonSerializer.Serialize(lbr, new JsonSerializerOptions { WriteIndented = true });
 Console.WriteLine(json);
 
-// ── 10. SIMD width ───────────────────────────────────────────────────────────
-//    Calculator() == new Calculator(SimdMode.Auto): widest accelerated width. The full series is always evaluated.
-Calculator scalar = new Calculator(SimdMode.Scalar);                 // force scalar
-Console.WriteLine(vsop.Mode);
-
-// ── 11. Fast single precision approximation (visualization only) ─────────────
-CalculatorF fast = new CalculatorF();
-VSOPResult approx = fast.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
+// ── 10. SIMD width & precision ───────────────────────────────────────────────
+//    Calculator() == new Calculator(SimdMode.Auto, PrecisionMode.Full): widest accelerated width, full series.
+Calculator scalar = new Calculator(SimdMode.Scalar);                          // force scalar
+Calculator fast = new Calculator(SimdMode.Auto, PrecisionMode.Fast);           // truncation error <= 1"
+Calculator ultraFast = new Calculator(SimdMode.Auto, PrecisionMode.UltraFast); // truncation error <= 10"
+Console.WriteLine($"{fast.Mode}, {fast.Precision}");
 ```
 
 `SimdMode.Vector128/256/512` throws `PlatformNotSupportedException` when the width is not hardware accelerated; `SimdMode.Auto` never throws.
@@ -123,8 +125,15 @@ Calculators are read-only after construction and safe to share across threads.
 
 Secular (polynomial, C = 0) terms are evaluated separately from the periodic series, and the mean motion is reduced modulo 2π with an error-free product, so longitudes keep full double precision (~2e-15 rad) far from J2000 instead of being accumulated as ~3e4 rad.
 
-`CalculatorF` evaluates the full periodic series in single precision (the secular terms stay in double). Over ±1000 years around J2000: elliptic elements a up to ~6e-6 au, l/k/h ~2e-7, q/p ~1e-9; longitudes up to ~1e-3 rad (~210", Mercury); rectangular coordinates up to ~1e-3 au; rates up to ~7e-5 au/day. Within ±100 years: longitudes below ~14", coordinates below ~8e-5 au.
-Do not use it for precise astronomy.
+`PrecisionMode.Fast` and `PrecisionMode.UltraFast` drop periodic terms at load time with a strict bound. Over |t − J2000| ≤ 1000 years a dropped term A·cos(B + C·t)·tᵅ changes the value by at most |A| and the rate by at most (|A·C| + α·|A|) / 365250 per day. Terms are dropped by increasing contribution while the sums stay within the budget of each variable. Following the VSOP87 precision convention, the budget is the tolerance in radians for angles and k/h/q/p, the tolerance × a0 in au for distances and rectangular coordinates, and the same values per day for the rates.
+
+| Mode | Tolerance | Periodic terms kept (all versions) | Worst measured error / budget |
+|------|-----------|-----------------------------------:|------------------------------:|
+| `Full` | — | 269,163 (100%) | — |
+| `Fast` | 1″ (≈ VSOP87 theory precision) | 66,553 (24.7%) | 0.39 |
+| `UltraFast` | 10″ | 15,709 (5.8%) | 0.57 |
+
+The 786 secular terms are always kept. Beyond ±1000 years the bound grows with |t|ᵅ.
 
 Run the precision reports (written next to the test assembly):
 ```
@@ -133,9 +142,9 @@ dotnet test VSOP87.NET.Tests -c Release --filter TestCategory=Report
 
 | Report | Content |
 |--------|---------|
-| `Report_DoubleSimd.txt` | `Calculator` SIMD vs scalar |
-| `Report_FloatScalar.txt` / `Report_FloatSimd.txt` | `CalculatorF` vs `Calculator` |
-| `Report_TermCounts.txt` | Secular and periodic terms per variable |
+| `Report_DoubleSimd.txt` | SIMD vs scalar, full series |
+| `Report_Fast.txt` / `Report_UltraFast.txt` | Truncated modes vs full series |
+| `Report_TermCounts.txt` | Secular terms and periodic terms kept per mode and variable |
 
 # Change Log
 ### v3.0.0 2026.10.28
@@ -145,11 +154,11 @@ dotnet test VSOP87.NET.Tests -c Release --filter TestCategory=Report
 
 `VSOP87.NET.DataStructures` merged back into `VSOP87.NET`; the package no longer depends on an unpublished project, so NuGet install works again.
 
-SoA term tables built at load time, scalar path rewritten on SoA, SIMD path with vectorized `SinCos` (`SimdMode`). Both calculators always evaluate the full series.
+SoA term tables built at load time, scalar path rewritten on SoA, SIMD path with vectorized `SinCos` (`SimdMode`).
 
 Secular terms evaluated apart from the periodic series, mean motion reduced modulo 2π without loss: longitudes keep full precision far from J2000.
 
-Add `CalculatorF`, a fast single precision approximation.
+Add `PrecisionMode` (`Full`, `Fast` ≤ 1″, `UltraFast` ≤ 10″): strict, bounded truncation at load time.
 
 `Calculator.VSOP87DATA` is no longer public.
 

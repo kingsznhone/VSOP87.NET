@@ -2,7 +2,9 @@ using VSOP87;
 
 // Reference values: official VSOP87.chk (TDB).
 const double Tolerance = 1e-9;
-const double FloatTolerance = 1e-2;
+// Truncated modes are bounded by 1" / 10" (times a0 <= 5.2 au here); loose guards against gross errors.
+const double FastTolerance = 1e-4;
+const double UltraFastTolerance = 1e-3;
 
 (VSOPVersion Version, VSOPBody Body, double JulianDate, double[] Expected)[] cases =
 [
@@ -15,8 +17,9 @@ const double FloatTolerance = 1e-2;
 ];
 
 Calculator calculator = new();
-CalculatorF fast = new();
-Console.WriteLine($"Calculator mode: {calculator.Mode}, CalculatorF mode: {fast.Mode}");
+Calculator fast = new(SimdMode.Auto, PrecisionMode.Fast);
+Calculator ultraFast = new(SimdMode.Auto, PrecisionMode.UltraFast);
+Console.WriteLine($"Calculator mode: {calculator.Mode}");
 
 int failures = 0;
 foreach ((VSOPVersion version, VSOPBody body, double jd, double[] expected) in cases)
@@ -24,7 +27,8 @@ foreach ((VSOPVersion version, VSOPBody body, double jd, double[] expected) in c
     VSOPTime time = new(new DateTime(2000, 1, 1, 12, 0, 0, DateTimeKind.Utc).AddDays(jd - 2451545.0), TimeFrame.TDB);
     int angle = version == VSOPVersion.VSOP87 ? 1 : version is VSOPVersion.VSOP87B or VSOPVersion.VSOP87D ? 0 : -1;
     failures += Check($"{version} {body}", calculator.GetPlanetPosition(body, version, time).Variables.ToArray(), expected, angle, Tolerance);
-    failures += Check($"{version} {body} (CalculatorF)", fast.GetPlanetPosition(body, version, time).Variables.ToArray(), expected, angle, FloatTolerance);
+    failures += Check($"{version} {body} (Fast)", fast.GetPlanetPosition(body, version, time).Variables.ToArray(), expected, angle, FastTolerance);
+    failures += Check($"{version} {body} (UltraFast)", ultraFast.GetPlanetPosition(body, version, time).Variables.ToArray(), expected, angle, UltraFastTolerance);
 }
 
 Console.WriteLine(failures == 0 ? "Smoke test passed." : "Smoke test FAILED.");

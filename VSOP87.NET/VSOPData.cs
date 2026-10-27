@@ -75,6 +75,87 @@ namespace VSOP87
         // TimeSpan.TicksPerDay * 365250 = 3.15576e17 is exact in double.
         private const double TicksPerMillennium = TimeSpan.TicksPerDay * A1000;
 
+        // Semi-major axis a0 (au) indexed by VSOPBody, from VSOP87.f; scales the distance budgets.
+        private static readonly double[] _semiMajorAxis = [0.01, 0.3871, 0.7233, 1.0, 1.5237, 5.2026, 9.5547, 19.2181, 30.1096, 1.0];
+
+        /// <summary>
+        /// Truncation tolerance in arcseconds; 0 keeps the full series.
+        /// </summary>
+        public static double ToleranceArcsec(PrecisionMode precision) => precision switch
+        {
+            PrecisionMode.Full => 0d,
+            PrecisionMode.Fast => 1d,
+            PrecisionMode.UltraFast => 10d,
+            _ => throw new ArgumentOutOfRangeException(nameof(precision), precision, null),
+        };
+
+        /// <summary>
+        /// Truncation budget of one variable: the tolerance in radians, times a0 for distances
+        /// (a of the elliptic version, rectangular coordinates, radius r). The rate budget is the same value per day.
+        /// </summary>
+        public static double Budget(VSOPVersion version, VSOPBody body, int variable, double toleranceArcsec)
+        {
+            double radians = toleranceArcsec * Math.PI / 648000d;
+            bool distance = version switch
+            {
+                VSOPVersion.VSOP87 => variable == 0,
+                VSOPVersion.VSOP87B or VSOPVersion.VSOP87D => variable == 2,
+                _ => true,
+            };
+            return distance ? radians * _semiMajorAxis[(int)body] : radians;
+        }
+
+        /// <summary>
+        /// Strict truncation of the periodic terms of one variable (all powers together).
+        /// Over |t| &lt;= 1 millennium a dropped term changes the value by at most |A| and the rate by at most
+        /// (|A·C| + a·|A|) / 365250 per day, so the terms are dropped by increasing contribution while both sums stay within budget.
+        /// </summary>
+        /// <param name="periodic">Periodic terms per power of t.</param>
+        /// <param name="budget">Maximum value error; the rate budget is the same value per day.</param>
+        /// <param name="withRate">Whether the rate budget applies.</param>
+        /// <returns>The kept terms per power, in file order.</returns>
+        public static Term[][] Truncate(Term[][] periodic, double budget, bool withRate)
+        {
+            if (budget <= 0d)
+            {
+                return periodic;
+            }
+
+            List<(int Power, int Index, double Value, double Rate, double Key)> costs = [];
+            for (int it = 0; it < periodic.Length; it++)
+            {
+                for (int i = 0; i < periodic[it].Length; i++)
+                {
+                    Term term = periodic[it][i];
+                    double value = Math.Abs(term.A);
+                    double rate = (Math.Abs(term.A * term.C) + it * Math.Abs(term.A)) / A1000;
+                    costs.Add((it, i, value, rate, withRate ? Math.Max(value, rate) : value));
+                }
+            }
+            costs.Sort((x, y) => x.Key.CompareTo(y.Key));
+
+            bool[][] dropped = Array.ConvertAll(periodic, p => new bool[p.Length]);
+            double valueSum = 0d;
+            double rateSum = 0d;
+            foreach ((int power, int index, double value, double rate, _) in costs)
+            {
+                if (valueSum + value > budget || (withRate && rateSum + rate > budget))
+                {
+                    break;
+                }
+                valueSum += value;
+                rateSum += rate;
+                dropped[power][index] = true;
+            }
+
+            Term[][] kept = new Term[periodic.Length][];
+            for (int it = 0; it < periodic.Length; it++)
+            {
+                kept[it] = periodic[it].Where((_, i) => !dropped[it][i]).ToArray();
+            }
+            return kept;
+        }
+
         // Low part of 2pi: Math.Tau + TauLo carries ~107 bits.
         private const double TauLo = 2.4492935982947064e-16;
 

@@ -46,55 +46,55 @@ public class PrecisionReports
     }
 
     [TestMethod]
-    public void FloatScalarVsDouble()
+    [DataRow(PrecisionMode.Fast)]
+    [DataRow(PrecisionMode.UltraFast)]
+    public void TruncatedVsFull(PrecisionMode precision)
     {
-        CalculatorF calculator = new(SimdMode.Scalar);
-        WriteFloatReport(calculator, "Report_FloatScalar.txt");
-    }
-
-    [TestMethod]
-    public void FloatSimdVsDouble()
-    {
-        CalculatorF calculator = new(SimdMode.Auto);
-        WriteFloatReport(calculator, "Report_FloatSimd.txt");
+        Calculator calculator = new(SimdMode.Auto, precision);
+        WriteReport($"Calculator ({calculator.Mode}, {precision}, {VSOPData.ToleranceArcsec(precision)}\") vs Calculator (Scalar), full series.",
+            calculator.GetPlanetPosition, $"Report_{precision}.txt");
     }
 
     [TestMethod]
     public void TermCounts()
     {
         List<PlanetTable> planets = TestData.LoadRaw();
+        PrecisionMode[] modes = Enum.GetValues<PrecisionMode>();
 
         StringBuilder report = new();
-        report.AppendLine("Secular terms (C = 0, evaluated as a polynomial in double) and periodic terms (C != 0).");
-        report.AppendLine($"Version  Body     Var | {"Secular",8} | {"Periodic",10}");
+        report.AppendLine("Secular terms (C = 0, always evaluated) and periodic terms kept per precision mode.");
+        report.AppendLine($"Version  Body     Var | {"Secular",8} | {string.Join(" ", modes.Select(m => $"{m,10}"))}");
 
-        long[] totals = new long[2];
+        long[] totals = new long[modes.Length + 1];
         foreach (PlanetTable planet in planets.OrderBy(p => p.Version).ThenBy(p => p.Body))
         {
             string[] labels = TestData.Labels(planet.Version);
-            long[] bodyTotals = new long[2];
+            long[] bodyTotals = new long[modes.Length + 1];
             foreach (VariableTable variable in planet.variables.Values.OrderBy(v => v.Variable))
             {
-                Term[] terms = variable.PowerTables.Where(p => p?.Terms != null).SelectMany(p => p.Terms).ToArray();
-                long[] counts = [terms.Count(t => t.C == 0d), terms.Count(t => t.C != 0d)];
+                int iv = (int)variable.Variable - 1;
+                double[] hi = new double[variable.PowerTables.Length];
+                double[] lo = new double[variable.PowerTables.Length];
+                Term[][] periodic = variable.PowerTables.Select((p, it) => VSOPData.SplitSecular(p?.Terms ?? [], it, hi, lo)).ToArray();
+                long[] counts = new long[modes.Length + 1];
+                counts[0] = variable.PowerTables.Sum(p => p?.Terms?.Count(t => t.C == 0d) ?? 0);
+                for (int m = 0; m < modes.Length; m++)
+                {
+                    double budget = VSOPData.Budget(planet.Version, planet.Body, iv, VSOPData.ToleranceArcsec(modes[m]));
+                    counts[m + 1] = VSOPData.Truncate(periodic, budget, planet.Version != VSOPVersion.VSOP87).Sum(p => p.Length);
+                }
                 for (int i = 0; i < counts.Length; i++)
                 {
                     bodyTotals[i] += counts[i];
                     totals[i] += counts[i];
                 }
-                AppendCounts(report, $"{planet.Version,-8} {planet.Body,-8} {labels[(int)variable.Variable - 1],-3} |", counts);
+                AppendCounts(report, $"{planet.Version,-8} {planet.Body,-8} {labels[iv],-3} |", counts);
             }
             AppendCounts(report, $"{planet.Version,-8} {planet.Body,-8} SUM |", bodyTotals);
         }
         AppendCounts(report, "TOTAL                 |", totals);
 
         Write(report, "Report_TermCounts.txt");
-    }
-
-    private void WriteFloatReport(CalculatorF calculator, string fileName)
-    {
-        WriteReport($"CalculatorF ({calculator.Mode}) vs Calculator (Scalar), full series.",
-            calculator.GetPlanetPosition, fileName);
     }
 
     private void WriteReport(string title, Func<VSOPBody, VSOPVersion, VSOPTime, VSOPResult> evaluate, string fileName)

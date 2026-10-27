@@ -12,9 +12,6 @@ public class ChkReferenceTests
     // .chk values are printed with 10 decimals; allow one unit in the last place.
     private const double Tolerance = 1e-10;
 
-    // CalculatorF is a visualization grade approximation; this only guards against gross errors.
-    private const double FloatTolerance = 1e-2;
-
     private static Calculator _scalar = null!;
     private static Calculator _simd = null!;
     private static List<TestData.ChkEntry> _entries = null!;
@@ -78,27 +75,34 @@ public class ChkReferenceTests
     }
 
     [TestMethod]
-    public void CalculatorFIsCloseToOfficialChkValues()
+    [DataRow(PrecisionMode.Fast)]
+    [DataRow(PrecisionMode.UltraFast)]
+    public void TruncatedModesStayWithinBudgetOfOfficialChkValues(PrecisionMode precision)
     {
-        CalculatorF scalar = new(SimdMode.Scalar);
-        CalculatorF simd = new(SimdMode.Auto);
-        double max = 0d;
-        string worst = string.Empty;
+        Calculator calculator = new(SimdMode.Auto, precision);
+        double tolerance = VSOPData.ToleranceArcsec(precision);
+        double worstRatio = 0d;
+        StringBuilder failures = new();
         foreach (TestData.ChkEntry entry in _entries)
         {
             VSOPTime time = TestData.FromJulianDate(entry.JulianDate);
-            foreach (CalculatorF calculator in new[] { scalar, simd })
+            ReadOnlySpan<double> actual = calculator.GetPlanetPosition(entry.Body, entry.Version, time).Variables;
+            for (int i = 0; i < entry.Values.Length; i++)
             {
-                double diff = TestData.MaxDiff(entry.Version, entry.Values, calculator.GetPlanetPosition(entry.Body, entry.Version, time).Variables);
-                if (diff > max)
+                // Slots 3..5 of the rectangular/spherical versions are the rates of variables 0..2.
+                int variable = entry.Version == VSOPVersion.VSOP87 ? i : i % 3;
+                double budget = VSOPData.Budget(entry.Version, entry.Body, variable, tolerance) + Tolerance;
+                double diff = TestData.Diff(entry.Version, i, entry.Values[i], actual[i]);
+                worstRatio = Math.Max(worstRatio, diff / budget);
+                if (diff > budget)
                 {
-                    max = diff;
-                    worst = $"{calculator.Mode} {entry.Version} {entry.Body} JD{entry.JulianDate}";
+                    failures.AppendLine(string.Create(CultureInfo.InvariantCulture,
+                        $"{entry.Version} {entry.Body} JD{entry.JulianDate:F1} [{i}]: diff {diff:E3}, budget {budget:E3}"));
                 }
             }
         }
-        TestContext.WriteLine($"CalculatorF max error {max:E3} at {worst}");
+        TestContext.WriteLine($"{precision}: worst error / budget = {worstRatio:F3}");
 
-        Assert.IsTrue(max <= FloatTolerance, $"CalculatorF max error {max:E3} at {worst}");
+        Assert.AreEqual(0, failures.Length, failures.ToString());
     }
 }
