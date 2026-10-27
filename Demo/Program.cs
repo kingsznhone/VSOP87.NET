@@ -1,10 +1,12 @@
-﻿using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Running;
 using Demo;
 using System.Globalization;
 using System.Text.Json;
 using VSOP87;
 
 Calculator vsop = new Calculator();
+Console.WriteLine($"Calculator SIMD mode: {vsop.Mode}");
 
 DateTime dt = DateTime.Now;
 string inputT = "2000-01-01T12:00:00.0000000Z";

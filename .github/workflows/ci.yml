@@ -1,0 +1,37 @@
+name: NuGet Pack Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test VSOP87.NET.Tests/VSOP87.NET.Tests.csproj -c Release --filter "TestCategory!=Report"
+
+      - name: Pack
+        run: dotnet pack VSOP87.NET/VSOP87.NET.csproj -c Release -o artifacts
+
+      - name: Package smoke test
+        run: |
+          VERSION=$(dotnet msbuild VSOP87.NET/VSOP87.NET.csproj -getProperty:Version)
+          dotnet run --project PackageSmokeTest -c Release -p:VsopVersion=$VERSION
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nuget-package
+          retention-days: 7
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg

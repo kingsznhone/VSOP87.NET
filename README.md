@@ -19,21 +19,28 @@ This repo is not just programming language translation, it's refactoring of VSOP
 2. Use VSOPTime class to manage time. 
 </br>Easy to convert time by calling ```VSOPTime.UTC```, ```VSOPTime.TAI```, ```VSOPTime.TDB```
 
-3. Very high performance per solution using multithread.
-![Performance Test](./PerformanceTest.png)
+3. SIMD accelerated series evaluation (`Vector128` / `Vector256` / `Vector512` vectorized `SinCos`) on SoA term tables, with automatic hardware detection.
 
-4. Useful Utility class. Such as checking planet available in specific version.
-5. Async Api 
-6. Use [MessagePack](https://github.com/neuecc/MessagePack-CSharp) for binary serialize.
+    `GetPlanetPosition(JUPITER, VSOP87D)`, full series:
+
+    | Calculator             | Scalar   | Vector256 |
+    |------------------------|---------:|----------:|
+    | `Calculator` (double)  | 41.9 µs  | 9.19 µs   |
+    | `CalculatorF` (float)  | 45.1 µs  | 7.03 µs   |
+
+4. `CalculatorF`: single precision approximation for visualization (see [Precision](#precision)).
+5. Useful Utility class. Such as checking planet available in specific version.
+6. Async Api 
+7. Use [MemoryPack](https://github.com/Cysharp/MemoryPack) for binary serialize.
 <br>Initialization time becomes less than 10% of previous.
-7. Brotli compression on source data. ~34Mb -> ~3MB with no data lost.
+8. Brotli compression on source data. ~34Mb -> ~3MB with no data lost.
 <br>
 
 ## How to use
 
 * NuGet Package Manager
     ```
-    PM> NuGet\Install-Package VSOP87.NET -Version 1.1.6
+    PM> NuGet\Install-Package VSOP87.NET -Version 3.0.0
     ```
 
 ```csharp
@@ -96,9 +103,64 @@ VSOPResult result = await vsop.GetPlanetPositionAsync(VSOPBody.JUPITER, VSOPVers
 // ── 9. JSON serialization (System.Text.Json, polymorphic) ────────────────────
 string json = JsonSerializer.Serialize(lbr, new JsonSerializerOptions { WriteIndented = true });
 Console.WriteLine(json);
+
+// ── 10. SIMD width ───────────────────────────────────────────────────────────
+//    Calculator() == new Calculator(SimdMode.Auto): widest accelerated width. The full series is always evaluated.
+Calculator scalar = new Calculator(SimdMode.Scalar);                 // force scalar
+Console.WriteLine(vsop.Mode);
+
+// ── 11. Fast single precision approximation (visualization only) ─────────────
+CalculatorF fast = new CalculatorF();
+VSOPResult approx = fast.GetPlanetPosition(VSOPBody.EARTH, VSOPVersion.VSOP87D, vTime);
 ```
 
+`SimdMode.Vector128/256/512` throws `PlatformNotSupportedException` when the width is not hardware accelerated; `SimdMode.Auto` never throws.
+Calculators are read-only after construction and safe to share across threads.
+
+# Precision
+
+`Calculator` reproduces all 500 records of the official `VSOP87.chk` (every version and body, 1099–2000) within the printed precision (1e-10) on both the scalar and SIMD paths.
+
+Secular (polynomial, C = 0) terms are evaluated separately from the periodic series, and the mean motion is reduced modulo 2π with an error-free product, so longitudes keep full double precision (~2e-15 rad) far from J2000 instead of being accumulated as ~3e4 rad.
+
+`CalculatorF` evaluates the full periodic series in single precision (the secular terms stay in double). Over ±1000 years around J2000: elliptic elements a up to ~6e-6 au, l/k/h ~2e-7, q/p ~1e-9; longitudes up to ~1e-3 rad (~210", Mercury); rectangular coordinates up to ~1e-3 au; rates up to ~7e-5 au/day. Within ±100 years: longitudes below ~14", coordinates below ~8e-5 au.
+Do not use it for precise astronomy.
+
+Run the precision reports (written next to the test assembly):
+```
+dotnet test VSOP87.NET.Tests -c Release --filter TestCategory=Report
+```
+
+| Report | Content |
+|--------|---------|
+| `Report_DoubleSimd.txt` | `Calculator` SIMD vs scalar |
+| `Report_FloatScalar.txt` / `Report_FloatSimd.txt` | `CalculatorF` vs `Calculator` |
+| `Report_TermCounts.txt` | Secular and periodic terms per variable |
+
 # Change Log
+### v3.0.0 2026.10.28
+**Breaking Change Warning**
+
+.NET 10 only.
+
+`VSOP87.NET.DataStructures` merged back into `VSOP87.NET`; the package no longer depends on an unpublished project, so NuGet install works again.
+
+SoA term tables built at load time, scalar path rewritten on SoA, SIMD path with vectorized `SinCos` (`SimdMode`). Both calculators always evaluate the full series.
+
+Secular terms evaluated apart from the periodic series, mean motion reduced modulo 2π without loss: longitudes keep full precision far from J2000.
+
+Add `CalculatorF`, a fast single precision approximation.
+
+`Calculator.VSOP87DATA` is no longer public.
+
+Fix `VSOPTime.JulianDate` being one day off for times before 1899-12-30 (OADate discontinuity); add `VSOPTime.J2000`.
+
+Fix velocity sign of the latitude term in `Utility.LBRtoXYZ`.
+
+Fix `Utility.J2000toDate` / `DatetoJ2000` (and `ChangeEpoch`) applying the equatorial precession to ecliptic coordinates; now uses the IAU 1976 ecliptic precession, including the frame rotation rate for velocities.
+
+Add test suite (official `VSOP87.chk` validation, SIMD consistency, cross-version checks) and precision reports.
+
 ### v2.0.0 2026.03.24
 Major Refactor 
 
@@ -216,7 +278,7 @@ It's loaded into RAM when initiate VSOP calculator class
 
 # Enviroment 
 
-.NET 8/10 Runtime Windows x64
+.NET 10 Runtime (any OS / architecture; SIMD paths use hardware acceleration when available)
 
 <br>
 

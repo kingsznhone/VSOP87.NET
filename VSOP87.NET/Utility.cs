@@ -297,18 +297,19 @@ namespace VSOP87
 
             if (Vector256.IsHardwareAccelerated)
             {
-                Vector256<double> m1 = Vector256.Create(Math.Cos(b) * Math.Cos(l), r * Math.Sin(b) * Math.Cos(l), -r * Math.Cos(b) * Math.Sin(l), 0);
-                Vector256<double> m2 = Vector256.Create(Math.Cos(b) * Math.Sin(l), r * Math.Sin(b) * Math.Sin(l), r * Math.Cos(b) * Math.Cos(l), 0);
-                Vector256<double> m3 = Vector256.Create(Math.Sin(b), -r * Math.Cos(b), 0, 0);
+                Vector256<double> m1 = Vector256.Create(Math.Cos(b) * Math.Cos(l), -r * Math.Sin(b) * Math.Cos(l), -r * Math.Cos(b) * Math.Sin(l), 0);
+                Vector256<double> m2 = Vector256.Create(Math.Cos(b) * Math.Sin(l), -r * Math.Sin(b) * Math.Sin(l), r * Math.Cos(b) * Math.Cos(l), 0);
+                Vector256<double> m3 = Vector256.Create(Math.Sin(b), r * Math.Cos(b), 0, 0);
 
-                Vector256<double> vv = Vector256.Create(dr, db, dl, 0);
+                // Ordered to match the Jacobian columns: r, b, l.
+                Vector256<double> sphericalVelocity = Vector256.Create(dr, db, dl, 0);
 
                 xyz[0] = x;
                 xyz[1] = y;
                 xyz[2] = z;
-                xyz[3] = Vector256.Sum(m1 * vv);
-                xyz[4] = Vector256.Sum(m2 * vv);
-                xyz[5] = -Vector256.Sum(m3 * vv);
+                xyz[3] = Vector256.Sum(m1 * sphericalVelocity);
+                xyz[4] = Vector256.Sum(m2 * sphericalVelocity);
+                xyz[5] = Vector256.Sum(m3 * sphericalVelocity);
                 return xyz;
             }
 
@@ -317,9 +318,9 @@ namespace VSOP87
             // Jacobian matrix From spherical to cartesian
             //https://en.wikipedia.org/wiki/Spherical_coordinate_system#Integration_and_differentiation_in_spherical_coordinates
             double[,] J = {
-                           { Math.Cos(b) * Math.Cos(l),  r * Math.Sin(b) * Math.Cos(l), -r * Math.Cos(b) * Math.Sin(l)  },
-                           { Math.Cos(b) * Math.Sin(l),  r * Math.Sin(b) * Math.Sin(l),  r * Math.Cos(b) * Math.Cos(l)  },
-                           { Math.Sin(b),               -r * Math.Cos(b),                0                              }};
+                           { Math.Cos(b) * Math.Cos(l), -r * Math.Sin(b) * Math.Cos(l), -r * Math.Cos(b) * Math.Sin(l)  },
+                           { Math.Cos(b) * Math.Sin(l), -r * Math.Sin(b) * Math.Sin(l),  r * Math.Cos(b) * Math.Cos(l)  },
+                           { Math.Sin(b),                r * Math.Cos(b),                0                              }};
             double[,] Velocity = { { dr }, { db }, { dl } };
             var C = MultiplyMatrix(J, Velocity);
             dx = C[0, 0];
@@ -331,7 +332,7 @@ namespace VSOP87
             xyz[2] = z;
             xyz[3] = dx;
             xyz[4] = dy;
-            xyz[5] = -dz;
+            xyz[5] = dz;
             return xyz;
         }
 
@@ -411,6 +412,7 @@ namespace VSOP87
         /// Convert Elliptic coordinate to spherical coordinate.
         /// </summary>
         /// <param name="body">planet</param>
+        /// <param name="ell">Elliptic elements (a, l, k, h, q, p)</param>
         /// <returns>Spherical Heliocentric Coordinates</returns>
         public static double[] ELLtoLBR(VSOPBody body, double[] ell)
         {
@@ -704,17 +706,17 @@ namespace VSOP87
         }
 
         /// <summary>
-        /// Apply IAU 1976 luni-solar precession to rotate coordinates
-        /// from the fixed J2000 ecliptic frame to the ecliptic frame of a given date.
+        /// Apply the IAU 1976 ecliptic precession (Lieske et al. 1977) to rotate coordinates
+        /// from the fixed J2000 ecliptic and equinox to the mean ecliptic and equinox of a given date (VSOP87C/D frame).
         /// <para>
-        /// The three precession angles (Lieske et al. 1977) are polynomials in T
-        /// (Julian centuries from J2000), measured in arcseconds:
+        /// The precession quantities are polynomials in T (Julian centuries from J2000):
         /// <list type="bullet">
-        ///   <item>ζ_A = 2306.2181·T + 0.30188·T² + 0.017998·T³</item>
-        ///   <item>z_A = 2306.2181·T + 1.09468·T² + 0.018203·T³</item>
-        ///   <item>θ_A = 2004.3109·T − 0.42665·T² − 0.041775·T³</item>
+        ///   <item>π_A = 47.0029″·T − 0.03302″·T² + 0.000060″·T³ (inclination of the ecliptic of date)</item>
+        ///   <item>Π_A = 174.876384° − 869.8089″·T + 0.03536″·T² (node of the ecliptic of date)</item>
+        ///   <item>p_A = 5029.0966″·T + 1.11113″·T² − 0.000006″·T³ (general precession in longitude)</item>
         /// </list>
-        /// The rotation applied is  P = R_z(−z_A) · R_y(θ_A) · R_z(−ζ_A).
+        /// The rotation applied is P = R_z(−(Π_A + p_A)) · R_x(π_A) · R_z(Π_A).
+        /// Velocities are derivatives in the rotating frame of date: v' = P·v + dP/dt·r.
         /// </para>
         /// </summary>
         /// <param name="xyz">Ecliptic coordinates in J2000 frame: x,y,z,dx,dy,dz</param>
@@ -722,75 +724,22 @@ namespace VSOP87
         /// <returns>Ecliptic coordinates in the frame of the given date: x,y,z,dx,dy,dz</returns>
         public static double[] J2000toDate(double[] xyz, VSOPTime time)
         {
+            (double[,] p, double[,] dp) = EclipticPrecession(time);
             double[] ofdate = new double[6];
-
-            // Julian centuries from J2000.0
-            double T = (time.JulianDate - 2451545.0d) / 36525.0d;
-
-            // Precession angles in arcseconds → radians
-            double arcsec = Math.PI / 648000.0d;  // π / (180 × 3600)
-            double zetaA = (2306.2181d * T + 0.30188d * T * T + 0.017998d * T * T * T) * arcsec;
-            double zA = (2306.2181d * T + 1.09468d * T * T + 0.018203d * T * T * T) * arcsec;
-            double thetaA = (2004.3109d * T - 0.42665d * T * T - 0.041775d * T * T * T) * arcsec;
-
-            double Szeta = Math.Sin(zetaA), Czeta = Math.Cos(zetaA);
-            double Sz = Math.Sin(zA), Cz = Math.Cos(zA);
-            double Stheta = Math.Sin(thetaA), Ctheta = Math.Cos(thetaA);
-
-            // Precession matrix P = R_z(-zA) · R_y(θA) · R_z(-ζA)
-            // Row vectors of P (each row dotted with the input vector gives one output component):
-            //   P[0] = [ Cz·Ctheta·Czeta - Sz·Szeta,   Cz·Ctheta·Szeta + Sz·Czeta,   Cz·Stheta ]
-            //   P[1] = [-Sz·Ctheta·Czeta - Cz·Szeta,  -Sz·Ctheta·Szeta + Cz·Czeta,  -Sz·Stheta ]
-            //   P[2] = [         -Stheta·Czeta,                  -Stheta·Szeta,          Ctheta  ]
-
-            if (Vector256.IsHardwareAccelerated)
+            for (int i = 0; i < 3; i++)
             {
-                Vector256<double> row0 = Vector256.Create(Cz * Ctheta * Czeta - Sz * Szeta,
-                                                           Cz * Ctheta * Szeta + Sz * Czeta,
-                                                           Cz * Stheta, 0);
-                Vector256<double> row1 = Vector256.Create(-Sz * Ctheta * Czeta - Cz * Szeta,
-                                                          -Sz * Ctheta * Szeta + Cz * Czeta,
-                                                          -Sz * Stheta, 0);
-                Vector256<double> row2 = Vector256.Create(-Stheta * Czeta,
-                                                          -Stheta * Szeta,
-                                                           Ctheta, 0);
-
-                Vector256<double> pos = Vector256.Create(xyz[0], xyz[1], xyz[2], 0);
-                Vector256<double> vel = Vector256.Create(xyz[3], xyz[4], xyz[5], 0);
-
-                ofdate[0] = Vector256.Sum(row0 * pos);
-                ofdate[1] = Vector256.Sum(row1 * pos);
-                ofdate[2] = Vector256.Sum(row2 * pos);
-                ofdate[3] = Vector256.Sum(row0 * vel);
-                ofdate[4] = Vector256.Sum(row1 * vel);
-                ofdate[5] = Vector256.Sum(row2 * vel);
-                return ofdate;
+                ofdate[i] = p[i, 0] * xyz[0] + p[i, 1] * xyz[1] + p[i, 2] * xyz[2];
+                ofdate[i + 3] = p[i, 0] * xyz[3] + p[i, 1] * xyz[4] + p[i, 2] * xyz[5]
+                              + dp[i, 0] * xyz[0] + dp[i, 1] * xyz[1] + dp[i, 2] * xyz[2];
             }
-
-            double[,] P = new double[,]
-            {
-                {  Cz * Ctheta * Czeta - Sz * Szeta,   Cz * Ctheta * Szeta + Sz * Czeta,   Cz * Stheta },
-                { -Sz * Ctheta * Czeta - Cz * Szeta,  -Sz * Ctheta * Szeta + Cz * Czeta,  -Sz * Stheta },
-                {         -Stheta * Czeta,                      -Stheta * Szeta,                Ctheta  }
-            };
-
-            double[,] pos3 = { { xyz[0] }, { xyz[1] }, { xyz[2] } };
-            double[,] vel3 = { { xyz[3] }, { xyz[4] }, { xyz[5] } };
-
-            double[,] rPos = MultiplyMatrix(P, pos3);
-            double[,] rVel = MultiplyMatrix(P, vel3);
-
-            ofdate[0] = rPos[0, 0]; ofdate[1] = rPos[1, 0]; ofdate[2] = rPos[2, 0];
-            ofdate[3] = rVel[0, 0]; ofdate[4] = rVel[1, 0]; ofdate[5] = rVel[2, 0];
             return ofdate;
         }
 
         /// <summary>
-        /// Apply the inverse of the IAU 1976 precession to rotate coordinates
-        /// from the ecliptic frame of a given date back to the fixed J2000 ecliptic frame.
+        /// Apply the inverse of the IAU 1976 ecliptic precession to rotate coordinates
+        /// from the mean ecliptic and equinox of a given date back to the fixed J2000 ecliptic and equinox.
         /// <para>
-        /// Because P is a rotation matrix, its inverse equals its transpose P^T =
-        /// R_z(ζ_A) · R_y(−θ_A) · R_z(z_A).
+        /// Because P is a rotation matrix, its inverse equals its transpose: r = Pᵀ·r', v = Pᵀ·v' + (dP/dt)ᵀ·r'.
         /// </para>
         /// </summary>
         /// <param name="xyz">Ecliptic coordinates in the frame of the given date: x,y,z,dx,dy,dz</param>
@@ -798,67 +747,69 @@ namespace VSOP87
         /// <returns>Ecliptic coordinates in J2000 frame: x,y,z,dx,dy,dz</returns>
         public static double[] DatetoJ2000(double[] xyz, VSOPTime time)
         {
+            (double[,] p, double[,] dp) = EclipticPrecession(time);
             double[] j2000 = new double[6];
-
-            // Julian centuries from J2000.0
-            double T = (time.JulianDate - 2451545.0d) / 36525.0d;
-
-            // Precession angles in arcseconds → radians
-            double arcsec = Math.PI / 648000.0d;  // π / (180 × 3600)
-            double zetaA = (2306.2181d * T + 0.30188d * T * T + 0.017998d * T * T * T) * arcsec;
-            double zA = (2306.2181d * T + 1.09468d * T * T + 0.018203d * T * T * T) * arcsec;
-            double thetaA = (2004.3109d * T - 0.42665d * T * T - 0.041775d * T * T * T) * arcsec;
-
-            double Szeta = Math.Sin(zetaA), Czeta = Math.Cos(zetaA);
-            double Sz = Math.Sin(zA), Cz = Math.Cos(zA);
-            double Stheta = Math.Sin(thetaA), Ctheta = Math.Cos(thetaA);
-
-            // Inverse precession matrix P^T  (transpose of P used in J2000toDate)
-            // Row vectors of P^T (columns of P):
-            //   P^T[0] = [  Cz·Ctheta·Czeta - Sz·Szeta,  -Sz·Ctheta·Czeta - Cz·Szeta,  -Stheta·Czeta ]
-            //   P^T[1] = [  Cz·Ctheta·Szeta + Sz·Czeta,  -Sz·Ctheta·Szeta + Cz·Czeta,  -Stheta·Szeta ]
-            //   P^T[2] = [              Cz·Stheta,                    -Sz·Stheta,              Ctheta  ]
-
-            if (Vector256.IsHardwareAccelerated)
+            for (int i = 0; i < 3; i++)
             {
-                Vector256<double> row0 = Vector256.Create(Cz * Ctheta * Czeta - Sz * Szeta,
-                                                          -Sz * Ctheta * Czeta - Cz * Szeta,
-                                                          -Stheta * Czeta, 0);
-                Vector256<double> row1 = Vector256.Create(Cz * Ctheta * Szeta + Sz * Czeta,
-                                                          -Sz * Ctheta * Szeta + Cz * Czeta,
-                                                          -Stheta * Szeta, 0);
-                Vector256<double> row2 = Vector256.Create(Cz * Stheta,
-                                                         -Sz * Stheta,
-                                                          Ctheta, 0);
-
-                Vector256<double> pos = Vector256.Create(xyz[0], xyz[1], xyz[2], 0);
-                Vector256<double> vel = Vector256.Create(xyz[3], xyz[4], xyz[5], 0);
-
-                j2000[0] = Vector256.Sum(row0 * pos);
-                j2000[1] = Vector256.Sum(row1 * pos);
-                j2000[2] = Vector256.Sum(row2 * pos);
-                j2000[3] = Vector256.Sum(row0 * vel);
-                j2000[4] = Vector256.Sum(row1 * vel);
-                j2000[5] = Vector256.Sum(row2 * vel);
-                return j2000;
+                j2000[i] = p[0, i] * xyz[0] + p[1, i] * xyz[1] + p[2, i] * xyz[2];
+                j2000[i + 3] = p[0, i] * xyz[3] + p[1, i] * xyz[4] + p[2, i] * xyz[5]
+                             + dp[0, i] * xyz[0] + dp[1, i] * xyz[1] + dp[2, i] * xyz[2];
             }
-
-            double[,] PT = new double[,]
-            {
-                {  Cz * Ctheta * Czeta - Sz * Szeta,  -Sz * Ctheta * Czeta - Cz * Szeta,  -Stheta * Czeta },
-                {  Cz * Ctheta * Szeta + Sz * Czeta,  -Sz * Ctheta * Szeta + Cz * Czeta,  -Stheta * Szeta },
-                {              Cz * Stheta,                        -Sz * Stheta,                 Ctheta    }
-            };
-
-            double[,] pos3 = { { xyz[0] }, { xyz[1] }, { xyz[2] } };
-            double[,] vel3 = { { xyz[3] }, { xyz[4] }, { xyz[5] } };
-
-            double[,] rPos = MultiplyMatrix(PT, pos3);
-            double[,] rVel = MultiplyMatrix(PT, vel3);
-
-            j2000[0] = rPos[0, 0]; j2000[1] = rPos[1, 0]; j2000[2] = rPos[2, 0];
-            j2000[3] = rVel[0, 0]; j2000[4] = rVel[1, 0]; j2000[5] = rVel[2, 0];
             return j2000;
+        }
+
+        /// <summary>
+        /// Ecliptic precession matrix P (J2000 to date) and its time derivative dP/dt (per day).
+        /// </summary>
+        private static (double[,] P, double[,] dP) EclipticPrecession(VSOPTime time)
+        {
+            const double arcsec = Math.PI / 648000.0d;
+            const double daysPerCentury = 36525.0d;
+            double t = time.J2000 / daysPerCentury;
+
+            double eta = (47.0029d * t - 0.03302d * t * t + 0.000060d * t * t * t) * arcsec;
+            double node = 174.876384d * Math.PI / 180.0d + (-869.8089d * t + 0.03536d * t * t) * arcsec;
+            double p = (5029.0966d * t + 1.11113d * t * t - 0.000006d * t * t * t) * arcsec;
+
+            // Rates per day
+            double dEta = (47.0029d - 2 * 0.03302d * t + 3 * 0.000060d * t * t) * arcsec / daysPerCentury;
+            double dNode = (-869.8089d + 2 * 0.03536d * t) * arcsec / daysPerCentury;
+            double dP = (5029.0966d + 2 * 1.11113d * t - 3 * 0.000006d * t * t) * arcsec / daysPerCentury;
+
+            double[,] r3a = RotZ(-(node + p));
+            double[,] r1 = RotX(eta);
+            double[,] r3b = RotZ(node);
+
+            double[,] matrix = MultiplyMatrix(r3a, MultiplyMatrix(r1, r3b));
+            double[,] d1 = Scale(MultiplyMatrix(DRotZ(-(node + p)), MultiplyMatrix(r1, r3b)), -(dNode + dP));
+            double[,] d2 = Scale(MultiplyMatrix(r3a, MultiplyMatrix(DRotX(eta), r3b)), dEta);
+            double[,] d3 = Scale(MultiplyMatrix(r3a, MultiplyMatrix(r1, DRotZ(node))), dNode);
+            double[,] derivative = new double[3, 3];
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    derivative[i, j] = d1[i, j] + d2[i, j] + d3[i, j];
+                }
+            }
+            return (matrix, derivative);
+
+            // Frame rotations (passive) and their derivatives with respect to the angle.
+            static double[,] RotZ(double a) => new double[,] { { Math.Cos(a), Math.Sin(a), 0 }, { -Math.Sin(a), Math.Cos(a), 0 }, { 0, 0, 1 } };
+            static double[,] RotX(double a) => new double[,] { { 1, 0, 0 }, { 0, Math.Cos(a), Math.Sin(a) }, { 0, -Math.Sin(a), Math.Cos(a) } };
+            static double[,] DRotZ(double a) => new double[,] { { -Math.Sin(a), Math.Cos(a), 0 }, { -Math.Cos(a), -Math.Sin(a), 0 }, { 0, 0, 0 } };
+            static double[,] DRotX(double a) => new double[,] { { 0, 0, 0 }, { 0, -Math.Sin(a), Math.Cos(a) }, { 0, -Math.Cos(a), -Math.Sin(a) } };
+            static double[,] Scale(double[,] m, double s)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        m[i, j] *= s;
+                    }
+                }
+                return m;
+            }
         }
     }
 }

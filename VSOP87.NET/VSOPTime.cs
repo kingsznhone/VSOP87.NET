@@ -40,6 +40,11 @@ namespace VSOP87
         /// </summary>
         public double JulianDate => ToJulianDate(TDB);
 
+        /// <summary>
+        /// Days since J2000.0 (JD 2451545.0) in TDB
+        /// </summary>
+        public double J2000 => ToJ2000(TDB);
+
         private static List<Func<DateTime, DateTime>>
             UpGradeFuncs = new List<Func<DateTime, DateTime>>([UTCtoTAI, TAItoTT, TTtoTDB]);
 
@@ -55,9 +60,10 @@ namespace VSOP87
         /// <summary>
         ///
         /// </summary>
-        /// <param name="dt">DateTime in UTC Frame</param>
-        /// <param name="TargetFrame"></param>
-        /// <returns></returns>
+        /// <param name="dt">DateTime to convert</param>
+        /// <param name="SourceFrame">Time frame of <paramref name="dt"/></param>
+        /// <param name="TargetFrame">Target time frame</param>
+        /// <returns>DateTime in the target time frame</returns>
         public static DateTime ChangeFrame(DateTime dt, TimeFrame SourceFrame, TimeFrame TargetFrame)
         {
             while (SourceFrame != TargetFrame)
@@ -117,6 +123,19 @@ namespace VSOP87
 
         #region JulianDate Convert
 
+        internal static readonly long J2000Ticks = new DateTime(2000, 1, 1, 12, 0, 0).Ticks;
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="dt">Barycentric Dynamical Time</param>
+        /// <returns>Days since J2000.0 in double</returns>
+        public static double ToJ2000(DateTime dt)
+        {
+            // OADate is discontinuous before 1899-12-30, so use ticks instead.
+            return (double)(dt.Ticks - J2000Ticks) / TimeSpan.TicksPerDay;
+        }
+
         /// <summary>
         ///
         /// </summary>
@@ -124,7 +143,7 @@ namespace VSOP87
         /// <returns>JulianDate in double</returns>
         public static double ToJulianDate(DateTime dt)
         {
-            return dt.ToOADate() + 2415018.5d;
+            return ToJ2000(dt) + 2451545.0d;
         }
 
         /// <summary>
@@ -134,7 +153,7 @@ namespace VSOP87
         /// <returns>Datetime in TDB Frame</returns>
         public static DateTime FromJulianDate(double JD)
         {
-            return DateTime.FromOADate(JD - 2415018.5).ToUniversalTime();
+            return new DateTime(J2000Ticks + (long)Math.Round((JD - 2451545.0d) * TimeSpan.TicksPerDay), DateTimeKind.Utc);
         }
 
         #endregion JulianDate Convert
